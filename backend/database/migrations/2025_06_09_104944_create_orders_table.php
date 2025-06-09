@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('orders', function (Blueprint $table) {
+           Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->bigInteger('amount_price');
             $table->bigInteger('amount_discount')->nullable();
             $table->bigInteger('finall_amount_price');
             $table->enum('status', ['Awaiting_payment', 'paid', 'processed', 'sent', 'delivered'])->nullable();
-            $table->timestamp('order_registration_date');
-            $table->timestamp('order_payment_date');
-            $table->timestamp('processing_date');
-            $table->timestamp('sent_date');
-            $table->timestamp('delivery_date');
+            $table->timestamp('order_registration_date')->nullable();
+            $table->timestamp('order_payment_date')->nullable();
+            $table->timestamp('processing_date')->nullable();
+            $table->timestamp('sent_date')->nullable();
+            $table->timestamp('delivery_date')->nullable();
             $table->integer('tracking_code');
             $table->unsignedBigInteger('address_id');
             $table->unsignedBigInteger('payment_id');
@@ -34,8 +34,8 @@ return new class extends Migration
             $table->index(['user_id', 'address_id', 'payment_id', 'delivery_id']);
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('address_id')->references('id')->on('addresses')->onDelete('cascade');
-            $table->foreign('payment_id')->references('id')->on('payments')->onDelete('cascade');
-            $table->foreign('delivery_id')->references('id')->on('deliveries')->onDelete('cascade');
+            $table->foreign('payment_id')->references('id')->on('payment_methods')->onDelete('cascade');
+            $table->foreign('delivery_id')->references('id')->on('delivery_methods')->onDelete('cascade');
         });
     }
 

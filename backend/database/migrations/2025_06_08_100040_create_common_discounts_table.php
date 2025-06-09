@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('occasion', 255);
             $table->integer('amount');
             $table->integer('discount_ceiling');
-            $table->timestamp('start_date');
-            $table->timestamp('end_date');
+            $table->timestamp('start_date')->nullable();
+            $table->timestamp('end_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

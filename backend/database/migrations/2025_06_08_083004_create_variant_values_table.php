@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('variant_id');
             $table->unsignedBigInteger('product_attribute_id');
-            $table->unsignedBigInteger('product_attribute_value_id');
+            $table->unsignedBigInteger('value_id');
             $table->timestamps();
 
-            $table->index(['variant_id', 'product_attribute_id', 'product_attribute_value_id']);
+            $table->index(['variant_id', 'product_attribute_id', 'value_id']);
             $table->foreign('variant_id')
                   ->references('id')
                   ->on('variants')
@@ -27,7 +27,7 @@ return new class extends Migration
                   ->references('id')
                   ->on('product_attributes')
                   ->onDelete('cascade');
-            $table->foreign('product_attribute_value_id')
+            $table->foreign('value_id')
                   ->references('id')
                   ->on('product_attribute_values')
                   ->onDelete('cascade');

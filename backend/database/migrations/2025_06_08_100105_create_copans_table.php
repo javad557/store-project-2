@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('code', 255);
             $table->integer('amount');
             $table->tinyInteger('used')->default(0);
-            $table->timestamp('end_date');
+            $table->timestamp('end_date')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
             $table->softDeletes();

@@ -11,24 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('tickets', function (Blueprint $table) {
+         Schema::create('priority_tickets', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('category_ticket_id');
-            $table->unsignedBigInteger('priority_ticket_id');
-            $table->unsignedBigInteger('user_id');
-            $table->string('title', 255);
-            $table->text('body');
-            $table->unsignedBigInteger('parent_id')->nullable();
-            $table->tinyInteger('seen')->default(0);
-            $table->enum('status', ['open', 'user_closed', 'admin_closed', 'both']);
+            $table->string('name', 255);
             $table->timestamps();
-            $table->softDeletes();
-
-            $table->index(['category_ticket_id', 'priority_ticket_id', 'user_id', 'parent_id']);
-            $table->foreign('category_ticket_id')->references('id')->on('category_tickets')->onDelete('cascade');
-            $table->foreign('priority_ticket_id')->references('id')->on('priority_tickets')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('parent_id')->references('id')->on('tickets')->onDelete('set null');
         });
     }
 
