@@ -1,0 +1,47 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+@import "./grid.css";
+@import "./style.css";
+@import "./animate.min.css";
+@import "./bootstrap/bootstrap.min.css";
+
+.rotate-90 {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+}
+
+.dropdown-menu {
+  text-align: right;
+}
+
+.dropdown-toggle::after {
+  display: none !important;
+}
+
+.body-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-top: 50px !important;
+}
+.sidebar-open {
+  width: 224px !important;
+  min-width: 224px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: sticky;
+  right: 0;
+  transition: width 0.3s ease;
+}
+.sidebar-closed {
+  width: 0 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: width 0.3s ease;
+}
+.main-body {
+  width: 100%;
+  margin: 0 !important;
+  padding: 1rem !important;
+  flex-grow: 1;
+}
