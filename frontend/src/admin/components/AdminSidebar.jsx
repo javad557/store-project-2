@@ -1,44 +1,28 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 function AdminSidebar() {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isPostsDropdownOpen, setIsPostsDropdownOpen] = useState(false);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const togglePostsDropdown = () => {
+    setIsPostsDropdownOpen(!isPostsDropdownOpen);
   };
 
   return (
     <aside id="sidebar" className="sidebar">
       <section className="sidebar-container">
         <section className="sidebar-wrapper">
-          <a href="#" className="sidebar-link">
+          <Link to="/admin/dashboard" className="sidebar-link">
             <i className="fas fa-home"></i>
             <span>خانه</span>
-          </a>
+          </Link>
 
-          <section className="sidebar-part-title">بخش محتوی</section>
+          {/* بخش ثابت مارکت */}
+          <section className="sidebar-part-title">مارکت</section>
 
-          <section className="sidebar-group-link">
-            <section
-              className="sidebar-dropdown-toggle pointer"
-              onClick={toggleDropdown}
-            >
-              <i className="fas fa-chart-bar icon"></i>
-              <span>نوشته‌ها</span>
-              <i
-                className={`fas fa-angle-left angle ${
-                  isDropdownOpen ? "rotate-90" : ""
-                }`}
-              ></i>
-            </section>
-            <section
-              className={`sidebar-dropdown ${isDropdownOpen ? "" : "d-none"}`}
-            >
-              <a href="#">مقالات</a>
-              <a href="#">پست‌ها</a>
-              <a href="#">دوره‌ها</a>
-            </section>
-          </section>
+          <Link to="/admin/categories" className="sidebar-link">
+            <span>دسته‌بندی‌ها</span>
+          </Link>
         </section>
       </section>
     </aside>
