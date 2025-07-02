@@ -5,7 +5,7 @@ import {
   getCategory,
   updateCategory,
   getCategories,
-} from "../../services/categoryService.js";
+} from "../../services/market/categoryService.js";
 
 function EditCategory() {
   const [name, setName] = useState("");

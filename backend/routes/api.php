@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Market\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,4 +22,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/test', function () {
     return response()->json(['message' => 'Hello from Laravel!']);
+});
+
+
+Route::prefix('admin')->group(function () {
+    Route::prefix('market')->group(function () {
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [CategoryController::class, 'index']);
+            Route::get('/{category}', [CategoryController::class, 'show']);
+            Route::post('/', [CategoryController::class, 'store']);
+            Route::put('/{category}', [CategoryController::class, 'update']);
+            Route::delete('/{category}', [CategoryController::class, 'destroy']);
+        });
+    });
 });

@@ -5,6 +5,7 @@ namespace App\Models\Marketing;
 use App\Models\Market\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Amazing extends Model
 {

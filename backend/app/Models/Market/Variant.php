@@ -10,6 +10,7 @@ use App\Models\PurchaseProcess\Cart;
 use App\Models\PurchaseProcess\OrderItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Variant extends Model
 {

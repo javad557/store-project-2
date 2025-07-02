@@ -7,6 +7,7 @@ use App\Models\Profile\Province;
 use App\Models\PurchaseProcess\Order;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Address extends Model
 {
