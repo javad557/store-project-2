@@ -20,9 +20,15 @@ function AdminSidebar() {
           {/* بخش ثابت مارکت */}
           <section className="sidebar-part-title">مارکت</section>
 
-          <Link to="/admin/categories" className="sidebar-link">
+          <Link to="/admin/market/categories" className="sidebar-link">
             <span>دسته‌بندی‌ها</span>
           </Link>
+
+           <Link to="/admin/market/brands" className="sidebar-link">
+            <span>برند ها</span>
+          </Link>
+
+
         </section>
       </section>
     </aside>

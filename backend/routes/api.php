@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Market\CategoryController;
+use App\Http\Controllers\Market\BrandController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,14 @@ Route::prefix('admin')->group(function () {
             Route::post('/', [CategoryController::class, 'store']);
             Route::put('/{category}', [CategoryController::class, 'update']);
             Route::delete('/{category}', [CategoryController::class, 'destroy']);
+        });
+        
+        Route::prefix('brands')->group(function () {
+            Route::get('/', [BrandController::class, 'index']);
+            Route::get('/{brand}', [BrandController::class, 'show']);
+            Route::post('/', [BrandController::class, 'store']);
+            Route::put('/{brand}', [BrandController::class, 'update']);
+            Route::delete('/{brand}', [BrandController::class, 'destroy']);
         });
     });
 });

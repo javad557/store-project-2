@@ -51,7 +51,7 @@ function EditCategory() {
         parent_id: parentId || null,
       });
       showSuccess(response.data.message);
-      navigate("/admin/categories");
+      navigate("/admin/market/categories");
     } catch (error) {
       showError("به‌روزرسانی دسته‌بندی با خطا مواجه شد");
     }
@@ -66,7 +66,7 @@ function EditCategory() {
           </section>
 
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
-            <Link to="/admin/categories" className="btn btn-primary btn-sm">
+            <Link to="/admin/market/categories" className="btn btn-primary btn-sm">
               <i className="fa fa-arrow-right"></i> بازگشت
             </Link>
             <button

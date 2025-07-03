@@ -56,7 +56,7 @@ function Categories() {
             <h5>مدیریت دسته‌بندی‌ها</h5>
           </section>
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
-            <Link to="/admin/categories/add" className="btn btn-success btn-sm">
+            <Link to="/admin/market/categories/add" className="btn btn-success btn-sm">
               <i className="fa fa-plus"></i> افزودن
             </Link>
           </section>
@@ -83,7 +83,7 @@ function Categories() {
                       </td>
                       <td>
                         <Link
-                          to={`/admin/categories/edit/${category.id}`}
+                          to={`/admin/market/categories/edit/${category.id}`}
                           className="btn btn-primary btn-sm"
                         >
                           {" "}
