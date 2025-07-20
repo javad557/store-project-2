@@ -18,6 +18,8 @@ export const updateBrand = async (id, data) => {
   return await axios.put(`${API_URL}/admin/market/brands/${id}`, data);
 };
 
+
+
 export const deleteBrand = async (id) => {
   return await axios.delete(`${API_URL}/admin/market/brands/${id}`);
 };

@@ -14,8 +14,17 @@ class BrandController extends Controller
      */
     public function index()
     {
-        $brands=Brand::all();
-        return response()->json($brands);
+        try{
+             $brands = Brand::query()
+            ->select('id', 'name')
+            ->get();
+            return response()->json($brands);
+
+         } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'خطایی در دریافت محصولات رخ داد',
+            ], 500);
+        }
     }
 
     /**

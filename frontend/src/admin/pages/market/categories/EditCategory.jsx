@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { showSuccess, showError } from "../../../utils/notifications.jsx";
+import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import {
   getCategory,
   updateCategory,
   getCategories,
-} from "../../services/market/categoryService.js";
+} from "../../../services/market/categoryService.js";
 
 function EditCategory() {
   const [name, setName] = useState("");

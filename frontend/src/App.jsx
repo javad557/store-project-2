@@ -6,13 +6,24 @@ import AdminLayout from "./admin/layouts/AdminLayout";
 import Home from "./main/pages/Home";
 import Dashboard from "./admin/pages/Dashboard";
 
-import Categories from "./admin/pages/categories/Categories";
-import AddCategory from "./admin/pages/categories/AddCategory";
-import EditCategory from "./admin/pages/categories/EditCategory";
+import Categories from "./admin/pages/market/categories/Categories";
+import AddCategory from "./admin/pages/market/categories/AddCategory";
+import EditCategory from "./admin/pages/market/categories/EditCategory";
 
-import Brands from "./admin/pages/brands/Brands";
-import AddBrand from "./admin/pages/brands/AddBrand";
-import EditBrand from "./admin/pages/brands/EditBrand";
+import Brands from "./admin/pages/market/brands/Brands";
+import AddBrand from "./admin/pages/market/brands/AddBrand";
+import EditBrand from "./admin/pages/market/brands/EditBrand";
+
+import Products from "./admin/pages/market/products/Products";
+import AddProduct from "./admin/pages/market/products/AddProduct";
+import EditProduct from "./admin/pages/market/products/EditProduct";
+
+import Guarantees from "./admin/pages/market/guarantees/Guarantees";
+import AddGuarantee from "./admin/pages/market/guarantees/AddGuarantee";
+import EditGuarantee from "./admin/pages/market/guarantees/EditGuarantee";
+
+import Gallery from "./admin/pages/market/gallery/Gallery";
+import AddImage from "./admin/pages/market/gallery/AddImage";
 
 
 function App() {
@@ -34,6 +45,18 @@ function App() {
                 <Route path="brands" element={<Brands />} />
                 <Route path="brands/add" element={<AddBrand />} />
                 <Route path="brands/edit/:id" element={<EditBrand />} />
+
+                <Route path="products" element={<Products />} />
+                <Route path="products/add" element={<AddProduct />} />
+                <Route path="products/edit/:id" element={<EditProduct />} />
+
+                <Route path="guarantees/:productId" element={<Guarantees />} />
+                <Route path="guarantees/add/:productId" element={<AddGuarantee />} />
+                <Route path="guarantees/edit/:guaranteeId/:productId" element={<EditGuarantee />} />
+
+
+                <Route path="gallery/:productId" element={<Gallery />} />
+                <Route path="gallery/add/:productId" element={<AddImage />} />
 
             </Route>
         </Route>

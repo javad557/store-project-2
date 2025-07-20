@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Market\CategoryController;
 use App\Http\Controllers\Market\BrandController;
+use App\Http\Controllers\Market\ProductController;
+use App\Http\Controllers\Market\GuaranteeController;
+use App\Http\Controllers\Market\GalleryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +31,7 @@ Route::get('/test', function () {
 
 Route::prefix('admin')->group(function () {
     Route::prefix('market')->group(function () {
+
         Route::prefix('categories')->group(function () {
             Route::get('/', [CategoryController::class, 'index']);
             Route::get('/{category}', [CategoryController::class, 'show']);
@@ -42,6 +46,34 @@ Route::prefix('admin')->group(function () {
             Route::post('/', [BrandController::class, 'store']);
             Route::put('/{brand}', [BrandController::class, 'update']);
             Route::delete('/{brand}', [BrandController::class, 'destroy']);
+        });
+
+        Route::prefix('products')->group(function () {
+            Route::get('/', [ProductController::class, 'index']);
+            Route::get('/{product}', [ProductController::class, 'show']);
+            Route::post('/', [ProductController::class, 'store']);
+            Route::put('/{product}', [ProductController::class, 'update']);
+            Route::delete('/{product}', [ProductController::class, 'destroy']);
+            Route::put('toggle/{product}', [ProductController::class, 'toggle']);
+        });
+
+
+         Route::prefix('guarantees')->group(function () {
+            Route::get('/{product}', [GuaranteeController::class, 'index']);
+            Route::get('/{guarantee}/{product}', [GuaranteeController::class, 'show']);
+            Route::post('/{product}', [GuaranteeController::class, 'store']);
+            Route::put('/{guarantee}/{product}', [GuaranteeController::class, 'update']);
+            Route::delete('/{guarantee}', [GuaranteeController::class, 'destroy']);
+        });
+
+
+         Route::prefix('gallery')->group(function () {
+            Route::get('/{product}', [GalleryController::class, 'index']);
+            Route::get('/{image}/{product}', [GalleryController::class, 'show']);
+            Route::post('/{product}', [GalleryController::class, 'store']);
+            Route::put('/{image}/{product}', [GalleryController::class, 'update']);
+            Route::delete('/{image}', [GalleryController::class, 'destroy']);
+            Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain']);
         });
     });
 });

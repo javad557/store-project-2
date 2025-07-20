@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 import {
   getBrands,
   deleteBrand,
-} from "../../services/market/brandService.js";
+} from "../../../services/market/brandService.js";
 import {
   showSuccess,
   showError,
   confirmDelete,
-} from "../../../utils/notifications.jsx";
+} from "../../../../utils/notifications.jsx";
 
 function AllBrands() {
   const [brands, setBrands] = useState([]);

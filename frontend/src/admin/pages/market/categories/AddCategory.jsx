@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { showSuccess, showError } from "../../../utils/notifications.jsx";
-import { addCategory, getCategories } from "../../services/market/categoryService.js";
+import { showSuccess, showError } from "../../../../utils/notifications.jsx";
+import { addCategory, getCategories } from "../../../services/market/categoryService.js";
 
 function AddCategory() {
   const [name, setName] = useState("");

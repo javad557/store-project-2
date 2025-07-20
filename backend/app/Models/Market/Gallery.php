@@ -13,10 +13,6 @@ class Gallery extends Model
 
     protected $fillable = ['product_id', 'image', 'is_main'];
 
-    protected $casts = [
-        'is_main' => 'boolean'
-    ];
-
     public function product()
     {
         return $this->belongsTo(Product::class);

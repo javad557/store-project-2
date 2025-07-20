@@ -65,7 +65,7 @@ public function amazings()
     return $this->hasMany(Amazing::class);
 }
 
-public function galleries()
+public function gallery()
 {
     return $this->hasMany(Gallery::class);
 }

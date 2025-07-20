@@ -14,8 +14,17 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories=Category::all();
-        return response()->json($categories);
+        try{
+             $categories = Category::query()
+            ->select('id', 'name')
+            ->get();
+            return response()->json($categories);
+
+         } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'خطایی در دریافت محصولات رخ داد',
+            ], 500);
+        }
     }
 
     /**

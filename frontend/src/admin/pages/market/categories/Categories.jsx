@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import {
   getCategories,
   deleteCategory,
-} from "../../services/market/categoryService.js";
+} from "../../../services/market/categoryService.js";
 import {
   showSuccess,
   showError,
   confirmDelete,
-} from "../../../utils/notifications.jsx";
+} from "../../../../utils/notifications.jsx";
 
 function Categories() {
   const [categories, setCategories] = useState([]);

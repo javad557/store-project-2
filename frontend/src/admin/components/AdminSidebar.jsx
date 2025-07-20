@@ -28,6 +28,9 @@ function AdminSidebar() {
             <span>برند ها</span>
           </Link>
 
+           <Link to="/admin/market/products" className="sidebar-link">
+            <span>محصولات</span>
+          </Link>
 
         </section>
       </section>

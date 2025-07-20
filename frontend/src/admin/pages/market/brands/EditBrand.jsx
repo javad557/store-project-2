@@ -1,13 +1,26 @@
-// src/admin/pages/brands/AddBrand.jsx
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { showSuccess, showError } from "../../../utils/notifications.jsx";
-import { addBrand } from "../../services/market/brandService.js";
+// src/admin/pages/brands/EditBrand.jsx
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { showSuccess, showError } from "../../../../utils/notifications.jsx";
+import { getBrand, updateBrand } from "../../../services/market/brandService.js";
 
-function AddBrand() {
+function EditBrand() {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const brandResponse = await getBrand(id);
+        setName(brandResponse.data.name);
+      } catch (error) {
+        showError("دریافت اطلاعات با خطا مواجه شد");
+      }
+    };
+    fetchData();
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,11 +32,11 @@ function AddBrand() {
     }
 
     try {
-      const response = await addBrand({ name });
+      const response = await updateBrand(id, { name });
       showSuccess(response.data.message);
       navigate("/admin/market/brands");
     } catch (error) {
-      showError("افزودن برند با خطا مواجه شد");
+      showError("به‌روزرسانی برند با خطا مواجه شد");
     }
   };
 
@@ -32,7 +45,7 @@ function AddBrand() {
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
-            <h5>افزودن برند</h5>
+            <h5>ویرایش برند</h5>
           </section>
 
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
@@ -86,4 +99,4 @@ function AddBrand() {
   );
 }
 
-export default AddBrand;
+export default EditBrand;
