@@ -138,20 +138,49 @@ function Products() {
 
   return (
     <section className="row" dir="rtl">
-      <style>
-        {`
-          .btn .badge {
-            display: none;
-            transition: all 0.5s ease; /* کاهش سرعت انیمیشن به 0.5 ثانیه */
-          }
-          .btn:hover .badge {
-            display: block;
-            bottom: -30px;
-            right: 50%;
-            transform: translateX(50%);
-          }
-        `}
-      </style>
+       <style>
+    {`
+      .btn-group .btn {
+        transition: none;
+      }
+      .btn .badge {
+        display: none;
+        position: absolute;
+        top: 40px;
+        bottom: -50px;
+        right: 50%;
+        transform: translateX(50%);
+        background-color: #000;
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 10;
+      }
+      .btn:hover .badge {
+        display: block;
+        animation: fadeInOut 4s ease-in-out forwards;
+      }
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+          transform: translateX(50%) translateY(5px);
+        }
+        20% {
+          opacity: 1;
+          transform: translateX(50%) translateY(0);
+        }
+        80% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(50%) translateY(5px);
+        }
+      }
+    `}
+  </style>
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
@@ -279,7 +308,7 @@ function Products() {
                       <td>{product.price || "-"}</td>
                       <td>
                         <img
-                          src={product.image || "https://via.placeholder.com/60x40"}
+                          src={`http://localhost:8000/storage/${product.main_image}`}
                           alt={product.name}
                           className="max-height-2rem"
                           width="60px"
@@ -303,13 +332,7 @@ function Products() {
                             <FaEdit />
                             <span className="badge bg-dark">ویرایش</span>
                           </Link>
-                          <Link
-                            to="#"
-                            className="btn btn-warning btn-sm position-relative me-1"
-                          >
-                            <FaPalette />
-                            <span className="badge bg-dark">رنگ محصول</span>
-                          </Link>
+                         
                           <Link
                             to={`/admin/market/guarantees/${product.id}`}
                             className="btn btn-info btn-sm position-relative me-1"
@@ -325,7 +348,7 @@ function Products() {
                             <span className="badge bg-dark">گالری</span>
                           </Link>
                           <Link
-                            to="#"
+                            to={`/admin/market/variants/${product.id}`}
                             className="btn btn-dark btn-sm position-relative me-1"
                           >
                             <FaBox />

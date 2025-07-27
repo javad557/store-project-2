@@ -12,7 +12,7 @@ class VariantValue extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['variant_id', 'product_attribute_id', 'product_attribute_value_id'];
+    protected $fillable = ['variant_id', 'attribute', 'value'];
 
     public function variant()
     {

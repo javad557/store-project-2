@@ -1,24 +1,40 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { getVariants, updateVariant, deleteVariant, detectColor, detectAttributes } from "../../../services/market/variantService.js";
+import { Link, useParams } from "react-router-dom";
+import { getVariants, updateVariant, deleteVariant } from "../../../services/market/variantService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import { FaCheck, FaTrashAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Swal from "sweetalert2";
 
 function Variants() {
-  const { productId } = useParams(); // دریافت productId از URL
+  const { productId } = useParams();
   const [variants, setVariants] = useState([]);
+  const [attributeColumns, setAttributeColumns] = useState([]);
+  const [productName, setProductName] = useState("");
+  const [productImage, setProductImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchVariants = async () => {
       try {
         const response = await getVariants(productId);
         console.log("واریانت‌های دریافت‌شده:", response.data);
-        setVariants(Array.isArray(response.data) ? response.data : []);
+        const variantsData = Array.isArray(response.data.variants) ? response.data.variants : [];
+        setVariants(variantsData);
+        setProductName(response.data.product_name || "محصول بدون نام");
+        setProductImage(response.data.product_image || null);
+
+        const allAttributes = new Set();
+        variantsData.forEach((variant) => {
+          if (variant.attributes && typeof variant.attributes === "object") {
+            Object.keys(variant.attributes).forEach((key) => allAttributes.add(key));
+          }
+        });
+        const columns = Array.isArray(response.data.attribute_columns)
+          ? [...new Set([...response.data.attribute_columns, ...allAttributes])]
+          : [...allAttributes];
+        setAttributeColumns(columns);
       } catch (error) {
         console.error("خطا در دریافت واریانت‌ها:", error);
         setError("سرویس واریانت‌ها در دسترس نیست");
@@ -32,19 +48,16 @@ function Variants() {
 
   const handleUpdateVariant = async (variantId, updatedData) => {
     try {
-      // بررسی سفارش فعال
-      const variant = variants.find((v) => v.id === variantId);
-      if (variant.has_active_orders) {
-        showError("برای واریانت مورد نظر سفارش فعال وجود دارد");
-        return;
-      }
+      const payload = {
+        color: updatedData.color,
+        number: updatedData.number,
+        freezed_number: updatedData.freezed_number,
+        price_increase: updatedData.price_increase,
+        attributes: updatedData.attributes || {},
+      };
 
-      // اجرای متدهای تشخیص رنگ و ویژگی‌ها
-      await detectColor(updatedData.color);
-      await detectAttributes(updatedData);
-
-      // ارسال درخواست ویرایش
-      await updateVariant(variantId, updatedData);
+      console.log("Sending update payload:", { variantId, payload });
+      await updateVariant(variantId, payload);
       setVariants(
         variants.map((variant) =>
           variant.id === variantId ? { ...variant, ...updatedData } : variant
@@ -52,34 +65,46 @@ function Variants() {
       );
       showSuccess("واریانت با موفقیت ویرایش شد");
     } catch (error) {
-      showError("ویرایش واریانت با خطا مواجه شد");
+      console.error("Validation error:", error.response?.data);
+      const errorMessage =
+        error.response?.data?.errors?.join("، ") ||
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "ویرایش واریانت با خطا مواجه شد";
+      showError(errorMessage);
     }
   };
 
   const handleDeleteVariant = async (variantId, color) => {
     const result = await Swal.fire({
-      title: `آیا از حذف واریانت "${color}" مطمئن هستید؟`,
-      text: "این عملیات قابل بازگشت نیست!",
+      title: `آیا از انتقال واریانت "${color}" به فروش غیرمستقیم مطمئن هستید؟`,
+      text: "این عملیات واریانت را به حالت فروش از طریق واسطه‌ها تغییر می‌دهد!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "بله، حذف کن!",
+      confirmButtonText: "بله، انتقال بده!",
       cancelButtonText: "لغو",
       reverseButtons: true,
     });
 
     if (result.isConfirmed) {
       try {
-        const response = await deleteVariant(variantId);
-        if (response.data.has_active_orders) {
-          showError("برای واریانت مورد نظر سفارش فعال وجود دارد");
-        } else {
-          setVariants(variants.filter((variant) => variant.id !== variantId));
-          showSuccess("واریانت با موفقیت حذف شد");
-        }
+        await deleteVariant(variantId);
+        setVariants(
+          variants.map((variant) =>
+            variant.id === variantId ? { ...variant, number: 999 } : variant
+          )
+        );
+        showSuccess("واریانت با موفقیت به فروش غیرمستقیم منتقل شد");
       } catch (error) {
-        showError("حذف واریانت با خطا مواجه شد");
+        console.error("Validation error:", error.response?.data);
+        const errorMessage =
+          error.response?.data?.errors?.join("، ") ||
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "انتقال واریانت به فروش غیرمستقیم با خطا مواجه شد";
+        showError(errorMessage);
       }
     }
   };
@@ -87,7 +112,19 @@ function Variants() {
   const handleInputChange = (variantId, field, value) => {
     setVariants(
       variants.map((variant) =>
-        variant.id === variantId ? { ...variant, [field]: value } : variant
+        variant.id === variantId
+          ? field.startsWith("attributes.")
+            ? {
+                ...variant,
+                attributes: {
+                  ...variant.attributes,
+                  [field.replace("attributes.", "")]: value,
+                },
+              }
+            : field === "price_increase" || field === "number" || field === "freezed_number"
+            ? { ...variant, [field]: parseInt(value) || 0 }
+            : { ...variant, [field]: value }
+          : variant
       )
     );
   };
@@ -96,17 +133,44 @@ function Variants() {
     <section className="row" dir="rtl">
       <style>
         {`
+          .btn-group .btn {
+            transition: none;
+          }
           .btn .badge {
             display: none;
-            opacity: 0;
-            transition: opacity 0.7s ease, transform 0.7s ease;
+            position: absolute;
+            bottom: -35px;
+            right: 50%;
+            transform: translateX(50%);
+            background-color: #000;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+            line-height: 1.2;
           }
           .btn:hover .badge {
             display: block;
-            opacity: 1;
-            bottom: -30px;
-            right: 50%;
-            transform: translateX(50%);
+            animation: fadeInOut 4s ease-in-out forwards;
+          }
+          @keyframes fadeInOut {
+            0% {
+              opacity: 0;
+              transform: translateX(50%) translateY(5px);
+            }
+            20% {
+              opacity: 1;
+              transform: translateX(50%) translateY(0);
+            }
+            80% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(50%) translateY(5px);
+            }
           }
           .uniform-button {
             min-width: 120px;
@@ -114,12 +178,56 @@ function Variants() {
             font-size: 0.875rem;
             line-height: 1.5;
           }
+          .product-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+          }
+          .product-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+          }
+          .color-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end; /* دایره در سمت راست */
+          }
+          .color-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #dee2e6;
+            flex-shrink: 0; /* جلوگیری از تغییر اندازه دایره */
+          }
+          .color-input {
+            width: 100px; /* عرض ثابت برای اینپوت رنگ */
+            display: inline-block;
+          }
+          .table td, .table th {
+            vertical-align: middle; /* تراز عمودی وسط */
+            padding: 0.5rem; /* کاهش پدینگ برای کنترل ارتفاع */
+          }
         `}
       </style>
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
-            <h5>واریانت‌ها و انبارداری</h5>
+            <div className="product-header">
+              {productImage && (
+                <img
+                  src={productImage}
+                  alt={productName}
+                  className="product-image"
+                  onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                />
+              )}
+              <h5>واریانت‌ها و انبارداری - {productName}</h5>
+            </div>
           </section>
 
           {loading ? (
@@ -129,7 +237,10 @@ function Variants() {
           ) : null}
 
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
-            <Link to={`/admin/market/variants/manage/${productId}`} className="btn btn-info btn-sm uniform-button">
+            <Link
+              to={`/admin/market/variants/variantmanagement/${productId}`}
+              className="btn btn-info btn-sm uniform-button"
+            >
               مدیریت واریانت
             </Link>
             <Link to="/admin/market/products" className="btn btn-info btn-sm uniform-button">
@@ -138,14 +249,17 @@ function Variants() {
           </section>
 
           <section className="table-responsive">
-            <table className="table table-striped table-hover h-150px">
+            <table className="table table-striped table-hover">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>رنگ</th>
                   <th>سفارش فعال</th>
-                  <th>افزایش قیمت</th>
                   <th>تعداد</th>
+                  <th>افزایش قیمت</th>
+                  {attributeColumns.map((column, index) => (
+                    <th key={index}>{column === `ویژگی ${index + 1}` ? "سایز" : column}</th>
+                  ))}
                   <th className="text-center">عملیات</th>
                 </tr>
               </thead>
@@ -155,30 +269,62 @@ function Variants() {
                     <tr key={variant.id}>
                       <th>{index + 1}</th>
                       <td>
+                        <div className="color-cell">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm color-input"
+                            value={variant.color || ""}
+                            onChange={(e) => handleInputChange(variant.id, "color", e.target.value)}
+                          />
+                          <span
+                            className="color-circle"
+                            style={{ backgroundColor: variant.hex_color || "#000000" }}
+                            title={variant.color}
+                          ></span>
+                        </div>
+                      </td>
+                      <td>
                         <input
-                          type="text"
+                          type="number"
                           className="form-control form-control-sm"
-                          value={variant.color || ""}
-                          onChange={(e) => handleInputChange(variant.id, "color", e.target.value)}
+                          value={variant.freezed_number || 0}
+                          onChange={(e) =>
+                            handleInputChange(variant.id, "freezed_number", parseInt(e.target.value))
+                          }
                         />
                       </td>
-                      <td>{variant.has_active_orders ? "بله" : "خیر"}</td>
+                      <td>
+                        <input
+                          type="number"
+                          className="form-control form-control-sm"
+                          value={variant.number || 0}
+                          onChange={(e) =>
+                            handleInputChange(variant.id, "number", parseInt(e.target.value))
+                          }
+                        />
+                      </td>
                       <td>
                         <input
                           type="number"
                           className="form-control form-control-sm"
                           value={variant.price_increase || 0}
-                          onChange={(e) => handleInputChange(variant.id, "price_increase", parseFloat(e.target.value))}
+                          onChange={(e) =>
+                            handleInputChange(variant.id, "price_increase", parseInt(e.target.value))
+                          }
                         />
                       </td>
-                      <td>
-                        <input
-                          type="number"
-                          className="form-control form-control-sm"
-                          value={variant.quantity || 0}
-                          onChange={(e) => handleInputChange(variant.id, "quantity", parseInt(e.target.value))}
-                        />
-                      </td>
+                      {attributeColumns.map((column, colIndex) => (
+                        <td key={colIndex}>
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={variant.attributes[column] || ""}
+                            onChange={(e) =>
+                              handleInputChange(variant.id, `attributes.${column}`, e.target.value)
+                            }
+                          />
+                        </td>
+                      ))}
                       <td className="text-center">
                         <div className="btn-group">
                           <button
@@ -186,8 +332,10 @@ function Variants() {
                             onClick={() =>
                               handleUpdateVariant(variant.id, {
                                 color: variant.color,
+                                number: variant.number,
+                                freezed_number: variant.freezed_number,
                                 price_increase: variant.price_increase,
-                                quantity: variant.quantity,
+                                attributes: variant.attributes || {},
                               })
                             }
                           >
@@ -207,7 +355,7 @@ function Variants() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center">
+                    <td colSpan={5 + attributeColumns.length} className="text-center">
                       هیچ واریانتی یافت نشد
                     </td>
                   </tr>

@@ -25,6 +25,9 @@ import EditGuarantee from "./admin/pages/market/guarantees/EditGuarantee";
 import Gallery from "./admin/pages/market/gallery/Gallery";
 import AddImage from "./admin/pages/market/gallery/AddImage";
 
+import Variants from "./admin/pages/market/variants/Variants";
+import VariantManagement from "./admin/pages/market/variants/VariantManagement";
+
 
 function App() {
   return (
@@ -54,9 +57,11 @@ function App() {
                 <Route path="guarantees/add/:productId" element={<AddGuarantee />} />
                 <Route path="guarantees/edit/:guaranteeId/:productId" element={<EditGuarantee />} />
 
-
                 <Route path="gallery/:productId" element={<Gallery />} />
                 <Route path="gallery/add/:productId" element={<AddImage />} />
+
+                <Route path="variants/:productId" element={<Variants />} />
+                <Route path="variants/variantmanagement/:productId" element={<VariantManagement />} />
 
             </Route>
         </Route>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Market\BrandController;
 use App\Http\Controllers\Market\ProductController;
 use App\Http\Controllers\Market\GuaranteeController;
 use App\Http\Controllers\Market\GalleryController;
+use App\Http\Controllers\Market\VariantController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,16 @@ Route::prefix('admin')->group(function () {
             Route::put('/{image}/{product}', [GalleryController::class, 'update']);
             Route::delete('/{image}', [GalleryController::class, 'destroy']);
             Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain']);
+        });
+
+
+         Route::prefix('variants')->group(function () {
+            Route::get('/{product}', [VariantController::class, 'index']);
+            // Route::get('/{image}/{product}', [GalleryController::class, 'show']);
+            Route::post('/{product}', [VariantController::class, 'store']);
+            Route::put('/{variant}', [VariantController::class, 'update']);
+            Route::delete('/{variant}', [VariantController::class, 'destroy']);
+            // Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain']);
         });
     });
 });
