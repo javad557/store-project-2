@@ -28,6 +28,12 @@ import AddImage from "./admin/pages/market/gallery/AddImage";
 import Variants from "./admin/pages/market/variants/Variants";
 import VariantManagement from "./admin/pages/market/variants/VariantManagement";
 
+import Comments from "./admin/pages/market/comments/Comments";
+
+import Banners from "./admin/pages/marketing/banners/Banners";
+import AddBanner from "./admin/pages/marketing/banners/AddBanner";
+import EditBanner from "./admin/pages/marketing/banners/EditBanner";
+
 
 function App() {
   return (
@@ -62,6 +68,16 @@ function App() {
 
                 <Route path="variants/:productId" element={<Variants />} />
                 <Route path="variants/variantmanagement/:productId" element={<VariantManagement />} />
+
+                <Route path="comments" element={<Comments />} />
+
+            </Route>
+
+            <Route path="marketing">
+
+              <Route path="banners" element={<Banners />} />
+              <Route path="banners/add" element={<AddBanner />} />
+              <Route path="banners/edit/:id" element={<EditBanner />} />
 
             </Route>
         </Route>

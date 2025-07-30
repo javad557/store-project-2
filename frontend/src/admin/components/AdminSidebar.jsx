@@ -32,6 +32,16 @@ function AdminSidebar() {
             <span>محصولات</span>
           </Link>
 
+          <Link to="/admin/market/comments" className="sidebar-link">
+            <span>نظرات</span>
+          </Link>
+
+           <section className="sidebar-part-title">مارکتینگ</section>
+
+           <Link to="/admin/marketing/banners" className="sidebar-link">
+            <span>بنرها</span>
+          </Link>
+
         </section>
       </section>
     </aside>

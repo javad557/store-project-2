@@ -8,6 +8,10 @@ use App\Http\Controllers\Market\ProductController;
 use App\Http\Controllers\Market\GuaranteeController;
 use App\Http\Controllers\Market\GalleryController;
 use App\Http\Controllers\Market\VariantController;
+use App\Http\Controllers\Market\CommentController;
+use App\Http\Controllers\Marketing\BannerController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +35,7 @@ Route::get('/test', function () {
 
 
 Route::prefix('admin')->group(function () {
+
     Route::prefix('market')->group(function () {
 
         Route::prefix('categories')->group(function () {
@@ -78,13 +83,35 @@ Route::prefix('admin')->group(function () {
         });
 
 
-         Route::prefix('variants')->group(function () {
+        Route::prefix('variants')->group(function () {
             Route::get('/{product}', [VariantController::class, 'index']);
-            // Route::get('/{image}/{product}', [GalleryController::class, 'show']);
             Route::post('/{product}', [VariantController::class, 'store']);
             Route::put('/{variant}', [VariantController::class, 'update']);
             Route::delete('/{variant}', [VariantController::class, 'destroy']);
-            // Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain']);
         });
+
+        Route::prefix('comments')->group(function () {
+            Route::get('/', [CommentController::class, 'index']);
+            Route::patch('/changeStatus/{comment}', [CommentController::class, 'changeStatus']);
+            // Route::get('/{image}/{product}', [CommentController::class, 'show']);
+            // Route::post('/{product}', [CommentController::class, 'store']);
+            // Route::put('/{variant}', [CommentController::class, 'update']);
+            // Route::delete('/{variant}', [CommentController::class, 'destroy']);
+            // Route::put('/set-main/{image}/{product}', [CommentController::class, 'setMain']);
+        });
+    });
+
+    Route::prefix('marketing')->group(function () {
+
+        Route::prefix('banners')->group(function () {
+            Route::get('/', [BannerController::class, 'index']);
+            // Route::patch('/changeStatus/{comment}', [BannerController::class, 'changeStatus']);
+            Route::get('/{banner}', [BannerController::class, 'show']);
+            Route::post('/', [BannerController::class, 'store']);
+            Route::put('/{banner}', [BannerController::class, 'update']);
+            Route::delete('/{banner}', [BannerController::class, 'destroy']);
+            // Route::put('/set-main/{image}/{product}', [BannerController::class, 'setMain']);
+        });
+
     });
 });

@@ -14,11 +14,6 @@ class Comment extends Model
 
      protected $fillable = ['product_id', 'user_id', 'seen', 'status'];
 
-    protected $casts = [
-        'seen' => 'boolean',
-        'status' => 'boolean'
-    ];
-
     public function product()
     {
         return $this->belongsTo(Product::class);
