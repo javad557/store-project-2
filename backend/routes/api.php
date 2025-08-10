@@ -1,15 +1,28 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Market\CategoryController;
 use App\Http\Controllers\Market\BrandController;
-use App\Http\Controllers\Market\ProductController;
-use App\Http\Controllers\Market\GuaranteeController;
-use App\Http\Controllers\Market\GalleryController;
-use App\Http\Controllers\Market\VariantController;
+use App\Http\Controllers\Market\CategoryController;
 use App\Http\Controllers\Market\CommentController;
+use App\Http\Controllers\Market\GalleryController;
+use App\Http\Controllers\Market\GuaranteeController;
+use App\Http\Controllers\Market\ProductController;
+use App\Http\Controllers\Market\VariantController;
+use App\Http\Controllers\Marketing\AmazingController;
 use App\Http\Controllers\Marketing\BannerController;
+use App\Http\Controllers\Marketing\CopanController;
+use App\Http\Controllers\User\AdminUserController;
+use App\Http\Controllers\User\CustomerUserController;
+use App\Http\Controllers\User\PermissionController;
+use App\Http\Controllers\User\RoleController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
+
+
+
+
+
+
 
 
 
@@ -105,12 +118,70 @@ Route::prefix('admin')->group(function () {
 
         Route::prefix('banners')->group(function () {
             Route::get('/', [BannerController::class, 'index']);
-            // Route::patch('/changeStatus/{comment}', [BannerController::class, 'changeStatus']);
             Route::get('/{banner}', [BannerController::class, 'show']);
             Route::post('/', [BannerController::class, 'store']);
             Route::put('/{banner}', [BannerController::class, 'update']);
             Route::delete('/{banner}', [BannerController::class, 'destroy']);
-            // Route::put('/set-main/{image}/{product}', [BannerController::class, 'setMain']);
+        });
+
+
+         Route::prefix('copans')->group(function () {
+            Route::get('/', [CopanController::class, 'index']);
+            Route::patch('/changeStatus/{copan}', [CopanController::class, 'changeStatus']);
+            Route::get('/{copan}', [CopanController::class, 'show']);
+            Route::post('/', [CopanController::class, 'store']);
+            Route::put('/{copan}', [CopanController::class, 'update']);
+            Route::delete('/{copan}', [CopanController::class, 'destroy']);
+        });
+
+        Route::prefix('amazings')->group(function () {
+            Route::get('/', [AmazingController::class, 'index']);
+            Route::get('/{amazing}', [AmazingController::class, 'show']);
+            Route::post('/', [AmazingController::class, 'store']);
+            Route::put('/{amazing}', [AmazingController::class, 'update']);
+             Route::patch('/changeStatus/{amazing}', [AmazingController::class, 'changeStatus']);
+            Route::delete('/{amazing}', [AmazingController::class, 'destroy']);
+        });
+
+    });
+
+    Route::prefix('users')->group(function () {
+
+         Route::prefix('adminusers')->group(function () {
+            Route::get('/', [AdminUserController::class, 'index']);
+            // Route::patch('/changeStatus/{comment}', [AdminUserController::class, 'changeStatus']);
+            Route::get('/{adminuser}', [AdminUserController::class, 'show']);
+            Route::post('/', [AdminUserController::class, 'store']);
+            Route::put('/{adminuser}', [AdminUserController::class, 'update']);
+            Route::delete('/{adminuser}', [AdminUserController::class, 'destroy']);
+            Route::patch('/changeBlock/{adminuser}', [AdminUserController::class, 'changeBlock']);
+        });
+
+         Route::prefix('customerusers')->group(function () {
+            Route::get('/', [CustomerUserController::class, 'index']);
+            // Route::patch('/changeStatus/{comment}', [CustomerUserController::class, 'changeStatus']);
+            Route::get('/{customeruser}', [CustomerUserController::class, 'show']);
+            // Route::post('/', [CustomerUserController::class, 'store']);
+            Route::put('/{customeruser}', [CustomerUserController::class, 'update']);
+            Route::delete('/{customeruser}', [CustomerUserController::class, 'destroy']);
+             Route::patch('/changeBlock/{customeruser}', [CustomerUserController::class, 'changeBlock']);
+        });
+
+         Route::prefix('permissions')->group(function () {
+            Route::get('/', [PermissionController::class, 'index']);
+            Route::post('/', [PermissionController::class, 'store']);
+            Route::put('/{permission}', [PermissionController::class, 'update']);
+            Route::delete('/{permission}', [PermissionController::class, 'destroy']);
+        });
+
+        Route::prefix('roles')->group(function () {
+            Route::get('/', [RoleController::class, 'index']);
+            // Route::patch('/changeStatus/{comment}', [RoleController::class, 'changeStatus']);
+            // Route::get('/{banner}', [RoleController::class, 'show']);
+            Route::post('/', [RoleController::class, 'store']);
+            Route::put('/{role}', [RoleController::class, 'update']);
+            Route::delete('/{role}', [RoleController::class, 'destroy']);
+            // Route::put('/set-main/{image}/{product}', [RoleController::class, 'setMain']);
         });
 
     });

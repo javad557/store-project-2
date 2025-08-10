@@ -11,7 +11,7 @@ class Amazing extends Model
 {
     use HasFactory,SoftDeletes;
 
-    protected $fillable = ['product_id', 'amout', 'end_date', 'status'];
+    protected $fillable = ['product_id', 'amount', 'end_date', 'status'];
 
     public function product()
     {

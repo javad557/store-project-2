@@ -2,46 +2,110 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 function AdminSidebar() {
-  const [isPostsDropdownOpen, setIsPostsDropdownOpen] = useState(false);
+  const [openSection, setOpenSection] = useState(null); // برای مدیریت بخش‌های دراپ‌داون
 
-  const togglePostsDropdown = () => {
-    setIsPostsDropdownOpen(!isPostsDropdownOpen);
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section); // باز/بسته کردن بخش
   };
 
   return (
     <aside id="sidebar" className="sidebar">
-      <section className="sidebar-container">
+      <section className="sidebar-container" style={{ height: "100vh", overflowY: "auto" }}>
         <section className="sidebar-wrapper">
           <Link to="/admin/dashboard" className="sidebar-link">
             <i className="fas fa-home"></i>
             <span>خانه</span>
           </Link>
 
-          {/* بخش ثابت مارکت */}
-          <section className="sidebar-part-title">مارکت</section>
+          {/* بخش مارکت */}
+          <section
+            className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "market" ? "sidebar-group-link-active" : ""}`}
+            onClick={() => toggleSection("market")}
+          >
+            <div>
+              <i className="fas fa-shopping-cart icon"></i>
+              <span>مارکت</span>
+            </div>
+            <i className={`fas fa-angle-down angle ${openSection === "market" ? "rotate-90" : ""}`}></i>
+          </section>
+          <div className={`sidebar-dropdown ${openSection === "market" ? "sidebar-group-link-active" : ""}`}>
+            <Link to="/admin/market/categories" className="sidebar-link">
+              <i className="fas fa-list"></i>
+              <span>دسته‌بندی‌ها</span>
+            </Link>
+            <Link to="/admin/market/brands" className="sidebar-link">
+              <i className="fas fa-tag"></i>
+              <span>برندها</span>
+            </Link>
+            <Link to="/admin/market/products" className="sidebar-link">
+              <i className="fas fa-box"></i>
+              <span>محصولات</span>
+            </Link>
+            <Link to="/admin/market/comments" className="sidebar-link">
+              <i className="fas fa-comment"></i>
+              <span>نظرات</span>
+            </Link>
+          </div>
 
-          <Link to="/admin/market/categories" className="sidebar-link">
-            <span>دسته‌بندی‌ها</span>
-          </Link>
+          {/* بخش مارکتینگ */}
+          <section
+            className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "marketing" ? "sidebar-group-link-active" : ""}`}
+            onClick={() => toggleSection("marketing")}
+          >
+            <div>
+              <i className="fas fa-bullhorn icon"></i>
+              <span>مارکتینگ</span>
+            </div>
+            <i className={`fas fa-angle-down angle ${openSection === "marketing" ? "rotate-90" : ""}`}></i>
+          </section>
+          <div className={`sidebar-dropdown ${openSection === "marketing" ? "sidebar-group-link-active" : ""}`}>
+            <Link to="/admin/marketing/banners" className="sidebar-link">
+              <i className="fas fa-image"></i>
+              <span>بنرها</span>
+            </Link>
+            <Link to="/admin/marketing/copans" className="sidebar-link">
+              <i className="fas fa-ticket-alt"></i>
+              <span>کدهای تخفیف</span>
+            </Link>
+            <Link to="/admin/marketing/amazings" className="sidebar-link">
+              <i className="fas fa-star"></i>
+              <span>فروش شگفت‌انگیز</span>
+            </Link>
+          </div>
 
-           <Link to="/admin/market/brands" className="sidebar-link">
-            <span>برند ها</span>
-          </Link>
 
-           <Link to="/admin/market/products" className="sidebar-link">
-            <span>محصولات</span>
-          </Link>
+ {/* بخش کاربران و سطوح دسترسی */}
+          <section
+            className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "users" ? "sidebar-group-link-active" : ""}`}
+            onClick={() => toggleSection("users")}
+          >
+            <div>
+              <i className="fas fa-users icon"></i>
+              <span>کاربران و دسترسی ها</span>
+            </div>
+            <i className={`fas fa-angle-down angle ${openSection === "users" ? "rotate-90" : ""}`}></i>
+          </section>
+          <div className={`sidebar-dropdown ${openSection === "users" ? "sidebar-group-link-active" : ""}`}>
+            <Link to="/admin/user/customerusers" className="sidebar-link">
+              <i className="fas fa-user"></i>
+              <span>کاربران</span>
+            </Link>
+            <Link to="/admin/user/adminusers" className="sidebar-link">
+              <i className="fas fa-user-shield"></i>
+              <span>کاربران ادمین</span>
+            </Link>
+            <Link to="/admin/user/permissions" className="sidebar-link">
+              <i className="fas fa-key"></i>
+              <span>دسترسی‌ها</span>
+            </Link>
+            <Link to="/admin/user/roles" className="sidebar-link">
+              <i className="fas fa-user-tag"></i>
+              <span>نقش‌ها</span>
+            </Link>
+          </div>
 
-          <Link to="/admin/market/comments" className="sidebar-link">
-            <span>نظرات</span>
-          </Link>
 
-           <section className="sidebar-part-title">مارکتینگ</section>
-
-           <Link to="/admin/marketing/banners" className="sidebar-link">
-            <span>بنرها</span>
-          </Link>
-
+          
         </section>
       </section>
     </aside>
@@ -49,3 +113,4 @@ function AdminSidebar() {
 }
 
 export default AdminSidebar;
+

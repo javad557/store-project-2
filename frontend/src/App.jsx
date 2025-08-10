@@ -30,9 +30,36 @@ import VariantManagement from "./admin/pages/market/variants/VariantManagement";
 
 import Comments from "./admin/pages/market/comments/Comments";
 
+
+
+
 import Banners from "./admin/pages/marketing/banners/Banners";
 import AddBanner from "./admin/pages/marketing/banners/AddBanner";
 import EditBanner from "./admin/pages/marketing/banners/EditBanner";
+
+import Copans from "./admin/pages/marketing/copans/Copans";
+import AddCopan from "./admin/pages/marketing/copans/AddCopan";
+import EditCopan from "./admin/pages/marketing/copans/EditCopan";
+
+import Amazings from "./admin/pages/marketing/amazings/Amazings";
+import AddAmazing from "./admin/pages/marketing/amazings/AddAmazing";
+import EditAmazing from "./admin/pages/marketing/amazings/EditAmazing";
+
+
+
+import Permissions from "./admin/pages/user/permission/Permissions";
+import AddPermission from "./admin/pages/user/permission/AddPermission";
+
+
+import Roles from "./admin/pages/user/role/Roles";
+import AddRole from "./admin/pages/user/role/AddRole";
+
+import AdminUsers from "./admin/pages/user/adminuser/AdminUsers";
+import AddAdminUser from "./admin/pages/user/adminuser/AddAdminUser";
+import EditAdminUser from "./admin/pages/user/adminuser/EditAdminUser";
+
+import CustomerUsers from "./admin/pages/user/customeruser/CustomerUsers";
+import EditCustomerUser from "./admin/pages/user/customeruser/EditCustomerUser";
 
 
 function App() {
@@ -79,7 +106,36 @@ function App() {
               <Route path="banners/add" element={<AddBanner />} />
               <Route path="banners/edit/:id" element={<EditBanner />} />
 
+
+              <Route path="copans" element={<Copans />} />
+              <Route path="copans/add" element={<AddCopan />} />
+              <Route path="copans/edit/:id" element={<EditCopan />} />
+
+              <Route path="amazings" element={<Amazings />} />
+              <Route path="amazings/add" element={<AddAmazing />} />
+              <Route path="amazings/edit/:id" element={<EditAmazing />} />
+
             </Route>
+
+             <Route path="user">
+
+              <Route path="permissions" element={<Permissions />} />
+              <Route path="permissions/add" element={<AddPermission />} />
+
+              <Route path="roles" element={<Roles />} />
+              <Route path="roles/add" element={<AddRole />} />
+
+              <Route path="adminusers" element={<AdminUsers />} />
+              <Route path="adminusers/add" element={<AddAdminUser />} />
+              <Route path="adminusers/edit/:id" element={<EditAdminUser />} />
+
+              <Route path="customerusers" element={<CustomerUsers />} />
+              <Route path="customerusers/edit/:id" element={<EditCustomerUser />} />
+
+
+
+
+             </Route>
         </Route>
         <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
       </Routes>

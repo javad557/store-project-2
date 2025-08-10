@@ -8,9 +8,11 @@ use App\Models\Auth\RecoveryCode;
 use App\Models\Market\Comment;
 use App\Models\Market\Rating;
 use App\Models\Marketing\Copan;
+use App\Models\Profile\Address;
 use App\Models\Profile\Comparison;
 use App\Models\Profile\Favorite;
 use App\Models\PurchaseProcess\Cart;
+
 use App\Models\PurchaseProcess\Order;
 use App\Models\support\Ticket;
 use App\Models\system\Violation;
@@ -33,6 +35,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'mobile',
+        'last_name',
+        'is_admin',
+        'national_code',
+        'birthdate',
     ];
 
     /**
@@ -54,6 +61,22 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = ['full_name'];
+
+     public function getfullNameAttribute()
+    {
+        return $this->name . ' ' . $this->last_name;
+    }
+
+     public function permissions()
+    {
+        return $this->belongsToMany(Permission::class);
+    }
+
+     public function roles()
+    {
+        return $this->belongsToMany(Role::class);
+    }
 
       public function comparisons()
     {
@@ -169,4 +192,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Address::class);
     }
+
+
+ 
 }
