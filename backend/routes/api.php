@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\LoginRegisterManagmentController;
 use App\Http\Controllers\Market\BrandController;
 use App\Http\Controllers\Market\CategoryController;
 use App\Http\Controllers\Market\CommentController;
@@ -184,5 +186,21 @@ Route::prefix('admin')->group(function () {
             // Route::put('/set-main/{image}/{product}', [RoleController::class, 'setMain']);
         });
 
+    });
+
+     Route::prefix('deliveries')->group(function () {
+        Route::get('/', [DeliveryController::class, 'index']);
+        Route::get('/{delivery}', [DeliveryController::class, 'show']);
+        Route::post('/', [DeliveryController::class, 'store']);
+        Route::put('/{delivery}', [DeliveryController::class, 'update']);
+        Route::delete('/{delivery}', [DeliveryController::class, 'destroy']);
+    });
+
+    Route::prefix('loginregistermanagment')->group(function () {
+        Route::get('/', [LoginRegisterManagmentController::class, 'index']);
+        // Route::get('/{loginregistermanagment}', [LoginRegisterManagmentController::class, 'show']);
+        // Route::post('/', [LoginRegisterManagmentController::class, 'store']);
+        Route::put('/{loginregistermanagment}', [LoginRegisterManagmentController::class, 'update']);
+        // Route::delete('/{delivery}', [LoginRegisterManagmentController::class, 'destroy']);
     });
 });

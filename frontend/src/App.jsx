@@ -62,6 +62,16 @@ import CustomerUsers from "./admin/pages/user/customeruser/CustomerUsers";
 import EditCustomerUser from "./admin/pages/user/customeruser/EditCustomerUser";
 
 
+import Deliveries from "./admin/pages/delivery/Deliveries";
+import AddDelivery from "./admin/pages/delivery/AddDelivery";
+import EditDelivery from "./admin/pages/delivery/EditDelivery";
+
+
+import LoginRegister from "./auth/pages/LoginRegister";
+
+import LoginRegisterSettings from "./admin/pages/loginregistermanagment/LoginRegisterManagment";
+
+
 function App() {
   return (
     <Router>
@@ -132,13 +142,28 @@ function App() {
               <Route path="customerusers" element={<CustomerUsers />} />
               <Route path="customerusers/edit/:id" element={<EditCustomerUser />} />
 
-
-
-
              </Route>
+
+             <Route path="deliveries" element={<Deliveries />} />
+             <Route path="deliveries/add" element={<AddDelivery />} />
+             <Route path="deliveries/edit/:id" element={<EditDelivery />} />
+
+             <Route path="loginregistermanagment" element={<LoginRegisterSettings />} />
+
         </Route>
+         
+        <Route path="/auth" >
+            <Route path="loginregister" element={<LoginRegister />} />
+        </Route>
+
+
         <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
-      </Routes>
+      
+
+      
+
+         </Routes>
+       
     </Router>
   );
 }

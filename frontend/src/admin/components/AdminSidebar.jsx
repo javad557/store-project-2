@@ -104,6 +104,13 @@ function AdminSidebar() {
             </Link>
           </div>
 
+          <Link to="/admin/deliveries" className="sidebar-link">
+              <span>روش‌های ارسال</span>
+          </Link>
+
+           <Link to="/admin/loginregistermanagment" className="sidebar-link">
+              <span>مدیریت لاگین رجیستر</span>
+          </Link>
 
           
         </section>
