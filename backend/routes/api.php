@@ -1,24 +1,27 @@
 <?php
 
-use App\Http\Controllers\DeliveryController;
-use App\Http\Controllers\LoginRegisterManagmentController;
-use App\Http\Controllers\Market\BrandController;
-use App\Http\Controllers\Market\CategoryController;
-use App\Http\Controllers\Market\CommentController;
-use App\Http\Controllers\Market\GalleryController;
-use App\Http\Controllers\Market\GuaranteeController;
-use App\Http\Controllers\Market\ProductController;
-use App\Http\Controllers\Market\VariantController;
-use App\Http\Controllers\Marketing\AmazingController;
-use App\Http\Controllers\Marketing\BannerController;
-use App\Http\Controllers\Marketing\CopanController;
-use App\Http\Controllers\User\AdminUserController;
-use App\Http\Controllers\User\CustomerUserController;
-use App\Http\Controllers\User\PermissionController;
-use App\Http\Controllers\User\RoleController;
+use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\LoginRegisterManagmentController;
+use App\Http\Controllers\Admin\Market\BrandController;
+use App\Http\Controllers\Admin\Market\CategoryController;
+use App\Http\Controllers\Admin\Market\CommentController;
+use App\Http\Controllers\Admin\Market\GalleryController;
+use App\Http\Controllers\Admin\Market\GuaranteeController;
+use App\Http\Controllers\Admin\Market\ProductController;
+use App\Http\Controllers\Admin\Market\VariantController;
+use App\Http\Controllers\Admin\Marketing\AmazingController;
+use App\Http\Controllers\Admin\Marketing\BannerController;
+use App\Http\Controllers\Admin\Marketing\CopanController;
+use App\Http\Controllers\Admin\User\AdminUserController;
+use App\Http\Controllers\Admin\User\CustomerUserController;
+use App\Http\Controllers\Admin\User\PermissionController;
+use App\Http\Controllers\Admin\User\RoleController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+
 
 
 
@@ -49,65 +52,65 @@ Route::get('/test', function () {
 });
 
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
 
     Route::prefix('market')->group(function () {
 
         Route::prefix('categories')->group(function () {
-            Route::get('/', [CategoryController::class, 'index']);
-            Route::get('/{category}', [CategoryController::class, 'show']);
-            Route::post('/', [CategoryController::class, 'store']);
-            Route::put('/{category}', [CategoryController::class, 'update']);
-            Route::delete('/{category}', [CategoryController::class, 'destroy']);
+            Route::get('/', [CategoryController::class, 'index'])->middleware('permission:read_categories');
+            Route::get('/{category}', [CategoryController::class, 'show'])->middleware('permission:edit_category');
+            Route::post('/', [CategoryController::class, 'store'])->middleware('permission:add_category');
+            Route::put('/{category}', [CategoryController::class, 'update'])->middleware('permission:edit_category');
+            Route::delete('/{category}', [CategoryController::class, 'destroy'])->middleware('permission:delete_category');
         });
         
         Route::prefix('brands')->group(function () {
-            Route::get('/', [BrandController::class, 'index']);
-            Route::get('/{brand}', [BrandController::class, 'show']);
-            Route::post('/', [BrandController::class, 'store']);
-            Route::put('/{brand}', [BrandController::class, 'update']);
-            Route::delete('/{brand}', [BrandController::class, 'destroy']);
+            Route::get('/', [BrandController::class, 'index'])->middleware('permission:read_brands');
+            Route::get('/{brand}', [BrandController::class, 'show'])->middleware('permission:edit_brand');
+            Route::post('/', [BrandController::class, 'store'])->middleware('permission:add_brand');
+            Route::put('/{brand}', [BrandController::class, 'update'])->middleware('permission:edit_brand');
+            Route::delete('/{brand}', [BrandController::class, 'destroy'])->middleware('permission:delete_brand');
         });
 
         Route::prefix('products')->group(function () {
-            Route::get('/', [ProductController::class, 'index']);
-            Route::get('/{product}', [ProductController::class, 'show']);
-            Route::post('/', [ProductController::class, 'store']);
-            Route::put('/{product}', [ProductController::class, 'update']);
-            Route::delete('/{product}', [ProductController::class, 'destroy']);
-            Route::put('toggle/{product}', [ProductController::class, 'toggle']);
+            Route::get('/', [ProductController::class, 'index'])->middleware('permission:read_products');
+            Route::get('/{product}', [ProductController::class, 'show'])->middleware('permission:edit_product');
+            Route::post('/', [ProductController::class, 'store'])->middleware('permission:add_product');
+            Route::put('/{product}', [ProductController::class, 'update'])->middleware('permission:edit_product');
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->middleware('permission:edit_product');
+            Route::put('toggle/{product}', [ProductController::class, 'toggle'])->middleware('permission:edit_product');
         });
 
 
          Route::prefix('guarantees')->group(function () {
-            Route::get('/{product}', [GuaranteeController::class, 'index']);
-            Route::get('/{guarantee}/{product}', [GuaranteeController::class, 'show']);
-            Route::post('/{product}', [GuaranteeController::class, 'store']);
-            Route::put('/{guarantee}/{product}', [GuaranteeController::class, 'update']);
-            Route::delete('/{guarantee}', [GuaranteeController::class, 'destroy']);
+            Route::get('/{product}', [GuaranteeController::class, 'index'])->middleware('permission:read_guarantees');
+            Route::get('/{guarantee}/{product}', [GuaranteeController::class, 'show'])->middleware('permission:edit_guarantee');
+            Route::post('/{product}', [GuaranteeController::class, 'store'])->middleware('permission:add_guarantee');
+            Route::put('/{guarantee}/{product}', [GuaranteeController::class, 'update'])->middleware('permission:edit_guarantee');
+            Route::delete('/{guarantee}', [GuaranteeController::class, 'destroy'])->middleware('permission:edit_guarantee');
         });
 
 
          Route::prefix('gallery')->group(function () {
-            Route::get('/{product}', [GalleryController::class, 'index']);
-            Route::get('/{image}/{product}', [GalleryController::class, 'show']);
-            Route::post('/{product}', [GalleryController::class, 'store']);
-            Route::put('/{image}/{product}', [GalleryController::class, 'update']);
-            Route::delete('/{image}', [GalleryController::class, 'destroy']);
-            Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain']);
+            Route::get('/{product}', [GalleryController::class, 'index'])->middleware('permission:read_products');
+            Route::get('/{image}/{product}', [GalleryController::class, 'show'])->middleware('permission:edit_product');
+            Route::post('/{product}', [GalleryController::class, 'store'])->middleware('permission:add_product');
+            Route::put('/{image}/{product}', [GalleryController::class, 'update'])->middleware('permission:edit_product');
+            Route::delete('/{image}', [GalleryController::class, 'destroy'])->middleware('permission:edit_product');
+            Route::put('/set-main/{image}/{product}', [GalleryController::class, 'setMain'])->middleware('permission:edit_product');
         });
 
 
         Route::prefix('variants')->group(function () {
-            Route::get('/{product}', [VariantController::class, 'index']);
-            Route::post('/{product}', [VariantController::class, 'store']);
-            Route::put('/{variant}', [VariantController::class, 'update']);
-            Route::delete('/{variant}', [VariantController::class, 'destroy']);
+            Route::get('/{product}', [VariantController::class, 'index'])->middleware('permission:read_variants');
+            Route::post('/{product}', [VariantController::class, 'store'])->middleware('permission:variant_managment');
+            Route::put('/{variant}', [VariantController::class, 'update'])->middleware('permission:variant_managment');
+            Route::delete('/{variant}', [VariantController::class, 'destroy'])->middleware('permission:variant_managment');
         });
 
         Route::prefix('comments')->group(function () {
-            Route::get('/', [CommentController::class, 'index']);
-            Route::patch('/changeStatus/{comment}', [CommentController::class, 'changeStatus']);
+            Route::get('/', [CommentController::class, 'index'])->middleware('permission:read_comments');
+            Route::patch('/changeStatus/{comment}', [CommentController::class, 'changeStatus'])->middleware('permission:read_comments');
             // Route::get('/{image}/{product}', [CommentController::class, 'show']);
             // Route::post('/{product}', [CommentController::class, 'store']);
             // Route::put('/{variant}', [CommentController::class, 'update']);
@@ -119,30 +122,30 @@ Route::prefix('admin')->group(function () {
     Route::prefix('marketing')->group(function () {
 
         Route::prefix('banners')->group(function () {
-            Route::get('/', [BannerController::class, 'index']);
-            Route::get('/{banner}', [BannerController::class, 'show']);
-            Route::post('/', [BannerController::class, 'store']);
-            Route::put('/{banner}', [BannerController::class, 'update']);
-            Route::delete('/{banner}', [BannerController::class, 'destroy']);
+            Route::get('/', [BannerController::class, 'index'])->middleware('permission:read_banners');
+            Route::get('/{banner}', [BannerController::class, 'show'])->middleware('permission:edit_banner');
+            Route::post('/', [BannerController::class, 'store'])->middleware('permission:add_banner');
+            Route::put('/{banner}', [BannerController::class, 'update'])->middleware('permission:edit_banner');
+            Route::delete('/{banner}', [BannerController::class, 'destroy'])->middleware('permission:edit_banner');
         });
 
 
          Route::prefix('copans')->group(function () {
-            Route::get('/', [CopanController::class, 'index']);
-            Route::patch('/changeStatus/{copan}', [CopanController::class, 'changeStatus']);
-            Route::get('/{copan}', [CopanController::class, 'show']);
-            Route::post('/', [CopanController::class, 'store']);
-            Route::put('/{copan}', [CopanController::class, 'update']);
-            Route::delete('/{copan}', [CopanController::class, 'destroy']);
+            Route::get('/', [CopanController::class, 'index'])->middleware('permission:read_copans');
+            Route::patch('/changeStatus/{copan}', [CopanController::class, 'changeStatus'])->middleware('permission:edit_copan');
+            Route::get('/{copan}', [CopanController::class, 'show'])->middleware('permission:edit_copan');
+            Route::post('/', [CopanController::class, 'store'])->middleware('permission:add_copan');
+            Route::put('/{copan}', [CopanController::class, 'update'])->middleware('permission:edit_copan');
+            Route::delete('/{copan}', [CopanController::class, 'destroy'])->middleware('permission:edit_copan');
         });
 
         Route::prefix('amazings')->group(function () {
-            Route::get('/', [AmazingController::class, 'index']);
-            Route::get('/{amazing}', [AmazingController::class, 'show']);
-            Route::post('/', [AmazingController::class, 'store']);
-            Route::put('/{amazing}', [AmazingController::class, 'update']);
-             Route::patch('/changeStatus/{amazing}', [AmazingController::class, 'changeStatus']);
-            Route::delete('/{amazing}', [AmazingController::class, 'destroy']);
+            Route::get('/', [AmazingController::class, 'index'])->middleware('permission:read_amazings');
+            Route::get('/{amazing}', [AmazingController::class, 'show'])->middleware('permission:edit_amazing');
+            Route::post('/', [AmazingController::class, 'store'])->middleware('permission:add_amazing');
+            Route::put('/{amazing}', [AmazingController::class, 'update'])->middleware('permission:edit_amazing');
+             Route::patch('/changeStatus/{amazing}', [AmazingController::class, 'changeStatus'])->middleware('permission:edit_amazing');
+            Route::delete('/{amazing}', [AmazingController::class, 'destroy'])->middleware('permission:edit_amazing');
         });
 
     });
@@ -150,57 +153,79 @@ Route::prefix('admin')->group(function () {
     Route::prefix('users')->group(function () {
 
          Route::prefix('adminusers')->group(function () {
-            Route::get('/', [AdminUserController::class, 'index']);
+            Route::get('/', [AdminUserController::class, 'index'])->middleware('permission:read_adminusers');
             // Route::patch('/changeStatus/{comment}', [AdminUserController::class, 'changeStatus']);
-            Route::get('/{adminuser}', [AdminUserController::class, 'show']);
-            Route::post('/', [AdminUserController::class, 'store']);
-            Route::put('/{adminuser}', [AdminUserController::class, 'update']);
-            Route::delete('/{adminuser}', [AdminUserController::class, 'destroy']);
-            Route::patch('/changeBlock/{adminuser}', [AdminUserController::class, 'changeBlock']);
+            Route::get('/{adminuser}', [AdminUserController::class, 'show'])->middleware('permission:edit_adminuser');
+            Route::post('/', [AdminUserController::class, 'store'])->middleware('permission:add_adminuser');
+            Route::put('/{adminuser}', [AdminUserController::class, 'update'])->middleware('permission:edit_adminuser');
+            Route::delete('/{adminuser}', [AdminUserController::class, 'destroy'])->middleware('permission:edit_adminuser');
+            Route::patch('/changeBlock/{adminuser}', [AdminUserController::class, 'changeBlock'])->middleware('permission:edit_adminuser');
         });
 
          Route::prefix('customerusers')->group(function () {
-            Route::get('/', [CustomerUserController::class, 'index']);
+            Route::get('/', [CustomerUserController::class, 'index'])->middleware('permission:read_customerusers');
             // Route::patch('/changeStatus/{comment}', [CustomerUserController::class, 'changeStatus']);
-            Route::get('/{customeruser}', [CustomerUserController::class, 'show']);
+            Route::get('/{customeruser}', [CustomerUserController::class, 'show'])->middleware('permission:edit_customeruser');
             // Route::post('/', [CustomerUserController::class, 'store']);
-            Route::put('/{customeruser}', [CustomerUserController::class, 'update']);
-            Route::delete('/{customeruser}', [CustomerUserController::class, 'destroy']);
-             Route::patch('/changeBlock/{customeruser}', [CustomerUserController::class, 'changeBlock']);
+            Route::put('/{customeruser}', [CustomerUserController::class, 'update'])->middleware('permission:edit_customeruser');
+            Route::delete('/{customeruser}', [CustomerUserController::class, 'destroy'])->middleware('permission:edit_customeruser');
+             Route::patch('/changeBlock/{customeruser}', [CustomerUserController::class, 'changeBlock'])->middleware('permission:edit_customeruser');
         });
 
          Route::prefix('permissions')->group(function () {
-            Route::get('/', [PermissionController::class, 'index']);
-            Route::post('/', [PermissionController::class, 'store']);
-            Route::put('/{permission}', [PermissionController::class, 'update']);
-            Route::delete('/{permission}', [PermissionController::class, 'destroy']);
+            Route::get('/', [PermissionController::class, 'index'])->middleware('permission:read_permissions');
+            Route::post('/', [PermissionController::class, 'store'])->middleware('permission:add_permission');
+            Route::put('/{permission}', [PermissionController::class, 'update'])->middleware('permission:edit_permission');
+            Route::delete('/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:edit_permission');
         });
 
         Route::prefix('roles')->group(function () {
-            Route::get('/', [RoleController::class, 'index']);
+            Route::get('/', [RoleController::class, 'index'])->middleware('permission:read_roles');
             // Route::patch('/changeStatus/{comment}', [RoleController::class, 'changeStatus']);
             // Route::get('/{banner}', [RoleController::class, 'show']);
-            Route::post('/', [RoleController::class, 'store']);
-            Route::put('/{role}', [RoleController::class, 'update']);
-            Route::delete('/{role}', [RoleController::class, 'destroy']);
+            Route::post('/', [RoleController::class, 'store'])->middleware('permission:add_role');
+            Route::put('/{role}', [RoleController::class, 'update'])->middleware('permission:edit_role');
+            Route::delete('/{role}', [RoleController::class, 'destroy'])->middleware('permission:edit_role');
             // Route::put('/set-main/{image}/{product}', [RoleController::class, 'setMain']);
         });
 
     });
 
      Route::prefix('deliveries')->group(function () {
-        Route::get('/', [DeliveryController::class, 'index']);
-        Route::get('/{delivery}', [DeliveryController::class, 'show']);
-        Route::post('/', [DeliveryController::class, 'store']);
-        Route::put('/{delivery}', [DeliveryController::class, 'update']);
-        Route::delete('/{delivery}', [DeliveryController::class, 'destroy']);
+        Route::get('/', [DeliveryController::class, 'index'])->middleware('permission:read_deliveries');
+        Route::get('/{delivery}', [DeliveryController::class, 'show'])->middleware('permission:edit_delivery');
+        Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:add_delivery');
+        Route::put('/{delivery}', [DeliveryController::class, 'update'])->middleware('permission:edit_delivery');
+        Route::delete('/{delivery}', [DeliveryController::class, 'destroy'])->middleware('permission:edit_delivery');
     });
 
-    Route::prefix('loginregistermanagment')->group(function () {
+   
+});
+
+ Route::prefix('loginregistermanagment')->group(function () {
         Route::get('/', [LoginRegisterManagmentController::class, 'index']);
         // Route::get('/{loginregistermanagment}', [LoginRegisterManagmentController::class, 'show']);
         // Route::post('/', [LoginRegisterManagmentController::class, 'store']);
-        Route::put('/{loginregistermanagment}', [LoginRegisterManagmentController::class, 'update']);
+        Route::put('/{loginregistermanagment}', [LoginRegisterManagmentController::class, 'update'])->middleware(['auth:api','admin','permission:loginresiter_managment']);
         // Route::delete('/{delivery}', [LoginRegisterManagmentController::class, 'destroy']);
-    });
+});
+
+
+Route::prefix('auth')->group(function () {
+
+    Route::post('/sendOtp', [AuthController::class, 'sendOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::get('/recovery-codes', [AuthController::class, 'getRecoveryCodes']);
+    Route::post('/verify-two-factor', [AuthController::class, 'verifyTwoFactor']);
+    Route::post('/enable-two-factor', [TwoFactorController::class, 'enableTwoFactor'])->middleware('auth:api');
+    Route::post('/disable-two-factor', [TwoFactorController::class, 'disableTwoFactor'])->middleware('auth:api');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    
+});
+
+
+Route::get('/recaptcha-config', function () {
+    return response()->json(['site_key' => config('recaptcha.api_site_key')]);
 });

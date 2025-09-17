@@ -1,17 +1,18 @@
-import axios from "axios";
+import axiosInstance from "../../../utils/api"; // مسیر فایل api.js
+
 
 const API_URL = "/api";
 
 export const getCustomers = async () => {
-  return await axios.get(`${API_URL}/admin/users/customerusers`);
+  return await axiosInstance.get(`${API_URL}/admin/users/customerusers`);
 };
 
 export const getCustomer = async (id) => {
-  return await axios.get(`${API_URL}/admin/users/customerusers/${id}`);
+  return await axiosInstance.get(`${API_URL}/admin/users/customerusers/${id}`);
 };
 
 export const addCustomer = async (data) => {
-    const response = await axios.post(`${API_URL}/admin/users/customerusers`, data, {
+    const response = await axiosInstance.post(`${API_URL}/admin/users/customerusers`, data, {
         headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -21,7 +22,7 @@ export const addCustomer = async (data) => {
 };
 
 export const updateCustomer = async (id, data) => {
-    const response = await axios.put(
+    const response = await axiosInstance.put(
         `${API_URL}/admin/users/customerusers/${id}`,
         data,
         {

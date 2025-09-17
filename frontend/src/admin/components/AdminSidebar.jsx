@@ -109,7 +109,7 @@ function AdminSidebar() {
           </Link>
 
            <Link to="/admin/loginregistermanagment" className="sidebar-link">
-              <span>مدیریت لاگین رجیستر</span>
+              <span>لاگین رجیستر</span>
           </Link>
 
           

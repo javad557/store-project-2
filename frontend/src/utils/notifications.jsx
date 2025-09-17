@@ -3,24 +3,24 @@ import Swal from "sweetalert2";
 
 export const showSuccess = (message) => {
   toast.success(
-    <>
+    <div>
       <strong>{message}</strong>
       <br />
       <br />
       <span>عملیات با موفقیت انجام شد.</span>
-    </>,
+    </div>,
     { autoClose: 5000 }
   );
 };
 
 export const showError = (message) => {
   toast.error(
-    <>
+    <div>
       <strong>{message}</strong>
       <br />
       <br />
       <span>عملیات با خطا مواجه شد.</span>
-    </>,
+    </div>,
     { autoClose: 5000 }
   );
 };

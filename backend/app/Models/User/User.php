@@ -3,8 +3,11 @@
 namespace App\Models\User;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Models\Auth\FailedAttempt;
 use App\Models\Auth\Otp;
 use App\Models\Auth\RecoveryCode;
+use App\Models\Auth\RecoveryOtp;
 use App\Models\Market\Comment;
 use App\Models\Market\Rating;
 use App\Models\Marketing\Copan;
@@ -21,8 +24,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+/**
+ * @method bool hasRole(string $role)
+ * @method bool hasPermission(string $permission)
+ * @method array getAllPermissions()
+ */
+
+class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable,SoftDeletes;
 
@@ -40,6 +50,13 @@ class User extends Authenticatable
         'is_admin',
         'national_code',
         'birthdate',
+        'id_type',
+        'mobile_veryfied_at',
+        'email_veryfied_at',
+        'two_factor_secret',
+        'two_factor_enabled',
+        'is_blocked',
+        'blocked_until',
     ];
 
     /**
@@ -61,6 +78,28 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+     /**
+     * Get the identifier that will be stored in the JWT's sub claim.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey(); // معمولاً ID کاربر
+    }
+
+    /**
+     * Return a key-value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims()
+    {
+        return [
+            'is_admin' => $this->is_admin, // افزودن is_admin به توکن JWT
+        ];
+    }
+
     protected $appends = ['full_name'];
 
      public function getfullNameAttribute()
@@ -78,10 +117,54 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class);
     }
 
+      public function failedAttempts()
+    {
+        return $this->hasMany(FailedAttempt::class);
+    }
+
       public function comparisons()
     {
         return $this->hasMany(Comparison::class);
     }
+
+    // چک کردن اینکه کاربر یه نقش خاص داره یا نه
+    public function hasRole($role)
+    {
+        return $this->roles()->where('name', $role)->exists();
+    }
+
+    // چک کردن اینکه کاربر یه دسترسی خاص داره یا نه
+     public function hasPermission($permission)
+    {
+        // چک کردن دسترسی مستقیم
+        if ($this->permissions()->where('name', $permission)->exists()) {
+            return true;
+        }
+
+        // چک کردن دسترسی از طریق نقش‌ها
+        return $this->roles()->whereHas('permissions', function ($query) use ($permission) {
+            $query->where('name', $permission);
+        })->exists();
+    }
+
+     public function getAllPermissions()
+    {
+        // دسترسی‌های مستقیم
+        $directPermissions = $this->permissions()->pluck('name')->toArray();
+
+        // دسترسی‌های از طریق نقش‌ها
+        $rolePermissions = $this->roles()
+            ->with('permissions')
+            ->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->pluck('name')
+            ->toArray();
+
+        // ادغام و حذف تکراری‌ها
+        return array_unique(array_merge($directPermissions, $rolePermissions));
+    }
+
 
     /**
      * Get the favorites for the user.
@@ -168,9 +251,9 @@ class User extends Authenticatable
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function recoveryCodes()
+    public function recoveryOtps()
     {
-        return $this->hasMany(RecoveryCode::class);
+        return $this->hasMany(RecoveryOtp::class);
     }
 
     /**

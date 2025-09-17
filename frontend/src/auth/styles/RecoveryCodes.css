@@ -1,0 +1,48 @@
+.recovery-codes-wrapper {
+  text-align: center;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  max-width: 400px;
+  width: 100%;
+}
+
+.recovery-codes-logo img {
+  max-width: 150px;
+  margin-bottom: 20px;
+}
+
+.recovery-codes-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.recovery-codes-info {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.recovery-codes-list ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.recovery-codes-list li {
+  font-size: 18px;
+  margin: 10px 0;
+  font-family: monospace;
+}
+
+.recovery-codes-btn .btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.recovery-codes-loading {
+  font-size: 16px;
+  color: #666;
+}

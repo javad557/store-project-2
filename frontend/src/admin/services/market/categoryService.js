@@ -1,23 +1,24 @@
-import axios from "axios";
+import axiosInstance from "../../../utils/api"; // مسیر فایل api.js
+
 
 const API_URL = "/api";
 
 export const getCategories = async () => {
-  return await axios.get(`${API_URL}/admin/market/categories`);
+  return await axiosInstance.get(`${API_URL}/admin/market/categories`);
 };
 
 export const getCategory = async (id) => {
-  return await axios.get(`${API_URL}/admin/market/categories/${id}`);
+  return await axiosInstance.get(`${API_URL}/admin/market/categories/${id}`);
 };
 
 export const addCategory = async (data) => {
-  return await axios.post(`${API_URL}/admin/market/categories`, data);
+  return await axiosInstance.post(`${API_URL}/admin/market/categories`, data);
 };
 
 export const updateCategory = async (id, data) => {
-  return await axios.put(`${API_URL}/admin/market/categories/${id}`, data);
+  return await axiosInstance.put(`${API_URL}/admin/market/categories/${id}`, data);
 };
 
 export const deleteCategory = async (id) => {
-  return await axios.delete(`${API_URL}/admin/market/categories/${id}`);
+  return await axiosInstance.delete(`${API_URL}/admin/market/categories/${id}`);
 };

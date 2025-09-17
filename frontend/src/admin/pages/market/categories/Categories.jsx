@@ -12,24 +12,30 @@ import {
 
 function Categories() {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setLoading(true);
       try {
         const response = await getCategories();
+        console.log("Response from getCategories:", response.data); // برای دیباگ
         const rawCategories = Array.isArray(response.data) ? response.data : [];
-        // اضافه کردن parent_name توی فرانت‌اند
         const categoriesWithParentName = rawCategories.map((category) => ({
           ...category,
           parent_name: category.parent_id
-            ? rawCategories.find((parent) => parent.id === category.parent_id)
-                ?.name || "-"
+            ? rawCategories.find((parent) => parent.id === category.parent_id)?.name || "-"
             : null,
         }));
         setCategories(categoriesWithParentName);
       } catch (error) {
+        console.log("Error in fetchCategories:", error.response); // برای دیباگ
         setCategories([]);
-        showError("دریافت دسته‌بندی‌ها با خطا مواجه شد");
+        // بررسی فیلد error به جای message
+        const errorMessage = error.response?.data?.error || "دریافت دسته‌بندی‌ها با خطا مواجه شد";
+        showError(errorMessage);
+      } finally {
+        setLoading(false);
       }
     };
     fetchCategories();
@@ -43,7 +49,10 @@ function Categories() {
         setCategories(categories.filter((category) => category.id !== id));
         showSuccess(response.data.message);
       } catch (error) {
-        showError("حذف دسته‌بندی با خطا مواجه شد");
+        console.log("Error in deleteCategory:", error.response); // برای دیباگ
+        // بررسی فیلد error به جای message
+        const errorMessage = error.response?.data?.error || "حذف دسته‌بندی با خطا مواجه شد";
+        showError(errorMessage);
       }
     }
   };
@@ -61,54 +70,55 @@ function Categories() {
             </Link>
           </section>
           <section className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>نام</th>
-                  <th>دسته‌بندی والد</th>
-                  <th>عملیات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.length > 0 ? (
-                  categories.map((category, index) => (
-                    <tr key={category.id}>
-                      <td>{index + 1}</td>
-                      <td>{category.name}</td>
-                      <td>
-                        {category.parent_id
-                          ? category.parent_name || "-"
-                          : "دسته‌بندی اصلی"}
-                      </td>
-                      <td>
-                        <Link
-                          to={`/admin/market/categories/edit/${category.id}`}
-                          className="btn btn-primary btn-sm"
-                        >
-                          {" "}
-                          ویرایش
-                          <i className="fa fa-edit"></i>
-                        </Link>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() =>
-                            handleDelete(category.id, category.name)
-                          }
-                        >
-                          حذف
-                          <i className="fa fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
+            {loading ? (
+              <div>در حال بارگذاری...</div>
+            ) : (
+              <table className="table table-striped table-hover">
+                <thead>
                   <tr>
-                    <td colSpan="4">دسته‌بندی‌ای یافت نشد</td>
+                    <th>#</th>
+                    <th>نام</th>
+                    <th>دسته‌بندی والد</th>
+                    <th>عملیات</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {categories.length > 0 ? (
+                    categories.map((category, index) => (
+                      <tr key={category.id}>
+                        <td>{index + 1}</td>
+                        <td>{category.name}</td>
+                        <td>
+                          {category.parent_id
+                            ? category.parent_name || "-"
+                            : "دسته‌بندی اصلی"}
+                        </td>
+                        <td>
+                          <Link
+                            to={`/admin/market/categories/edit/${category.id}`}
+                            className="btn btn-primary btn-sm"
+                          >
+                            ویرایش
+                            <i className="fa fa-edit"></i>
+                          </Link>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(category.id, category.name)}
+                          >
+                            حذف
+                            <i className="fa fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4">دسته‌بندی‌ای یافت نشد</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </section>
         </section>
       </section>

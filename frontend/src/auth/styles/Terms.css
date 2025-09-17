@@ -1,0 +1,73 @@
+.terms-wrapper {
+  max-width: 600px;
+  width: 100%;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-top: 510px;
+}
+
+.terms-logo img {
+  max-width: 150px;
+  margin-bottom: 20px;
+}
+
+.terms-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.terms-info {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.terms-content {
+  text-align: right;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.terms-content h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #d32f2f;
+}
+
+.terms-content p {
+    
+  margin-bottom: 15px;
+}
+
+.terms-content a {
+  color: #d32f2f;
+  text-decoration: none;
+}
+
+.terms-content a:hover {
+  text-decoration: underline;
+}
+
+.terms-back-btn {
+  margin-top: 20px;
+}
+
+.terms-back-btn .btn-danger {
+  background-color: #d32f2f;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.terms-back-btn .btn-danger:hover {
+  background-color: #b71c1c;
+}

@@ -10,7 +10,7 @@ class Otp extends Model
 {
     use HasFactory;
 
-     protected $fillable = ['user_id', 'code', 'used'];
+     protected $fillable = ['user_id', 'otp_hash', 'used','expires_at','token'];
 
     protected $casts = [
         'used' => 'boolean'

@@ -1,13 +1,14 @@
-import axios from "axios";
+import axiosInstance from "../../../utils/api"; // مسیر فایل api.js
+
 
 const API_URL = "/api";
 
 export const getAdmins = async () => {
-  return await axios.get(`${API_URL}/admin/users/adminusers`);
+  return await axiosInstance.get(`${API_URL}/admin/users/adminusers`);
 };
 
 export const getAdmin = async (id) => {
-  return await axios.get(`${API_URL}/admin/users/adminusers/${id}`);
+  return await axiosInstance.get(`${API_URL}/admin/users/adminusers/${id}`);
 };
 
 export const addAdmin = async (data) => {
@@ -21,7 +22,7 @@ export const addAdmin = async (data) => {
 };
 
 export const updateAdmin = async (id, data) => {
-    const response = await axios.put(
+    const response = await axiosInstance.put(
         `${API_URL}/admin/users/adminusers/${id}`,
         data,
         {
@@ -35,7 +36,7 @@ export const updateAdmin = async (id, data) => {
 };
 
 export const deleteAdmin = async (id) => {
-    const response = await axios.delete(`${API_URL}/admin/users/adminusers/${id}`, {
+    const response = await axiosInstance.delete(`${API_URL}/admin/users/adminusers/${id}`, {
         headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -46,7 +47,7 @@ export const deleteAdmin = async (id) => {
 
 
 export const toggleAdminStatus = async (id) => {
-    const response = await axios.patch(
+    const response = await axiosInstance.patch(
         `${API_URL}/admin/users/adminusers/changeBlock/${id}`,
         {},
         {

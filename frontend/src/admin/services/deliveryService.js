@@ -1,26 +1,27 @@
-import axios from "axios";
+import axiosInstance from "../../utils/api"; // مسیر فایل api.js
+
 
 const API_URL = "/api";
 
 export const getDeliveries = async () => {
-  return await axios.get(`${API_URL}/admin/deliveries`);
+  return await axiosInstance.get(`${API_URL}/admin/deliveries`);
 };
 
 export const getDelivery = async (id) => {
-  return await axios.get(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.get(`${API_URL}/admin/deliveries/${id}`);
 };
 
 
 export const updateDelivery = async (id, data) => {
-  return await axios.put(`${API_URL}/admin/deliveries/${id}`, data);
+  return await axiosInstance.put(`${API_URL}/admin/deliveries/${id}`, data);
 };
 
 export const deleteDelivery = async (id) => {
-  return await axios.delete(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.delete(`${API_URL}/admin/deliveries/${id}`);
 };
 
 export const addDelivery = async (data) => {
-    const response = await axios.post(`${API_URL}/admin/deliveries`, data, {
+    const response = await axiosInstance.post(`${API_URL}/admin/deliveries`, data, {
         headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -30,27 +31,58 @@ export const addDelivery = async (data) => {
 };
 
 
+
+
+// import axiosInstance from "../../utils/api"; // مسیر فایل api.js
+
+// export const getDeliveries = async () => {
+//   return await axiosInstance.get("/admin/deliveries");
+// };
+
+// export const getDelivery = async (id) => {
+//   return await axiosInstance.get(`/admin/deliveries/${id}`);
+// };
+
 // export const updateDelivery = async (id, data) => {
-//     const response = await axios.put(
-//         `${API_URL}/admin/deliveries/${id}`,
-//         data,
-//         {
-//             headers: {
-//                 "Content-Type": "application/json",
-//                 "Accept": "application/json",
-//             },
-//         }
-//     );
-//     return response.data; // بازگشت داده‌های پاسخ (شامل message)
+//   return await axiosInstance.put(`/admin/deliveries/${id}`, data);
 // };
 
 // export const deleteDelivery = async (id) => {
-//     const response = await axios.delete(`${API_URL}/admin/deliveries/${id}`, {
-//         headers: {
-//             "Content-Type": "application/json",
-//             "Accept": "application/json",
-//         },
-//     });
-//     return response.data; // بازگشت response.data
+//   return await axiosInstance.delete(`/admin/deliveries/${id}`);
 // };
+
+// export const addDelivery = async (data) => {
+//   return await axiosInstance.post("/admin/deliveries", data, {
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//     },
+//   });
+// };
+
+// // export const updateDelivery = async (id, data) => {
+// //     const response = await axios.put(
+// //         `${API_URL}/admin/deliveries/${id}`,
+// //         data,
+// //         {
+// //             headers: {
+// //                 "Content-Type": "application/json",
+// //                 "Accept": "application/json",
+// //             },
+// //         }
+// //     );
+// //     return response.data; // بازگشت داده‌های پاسخ (شامل message)
+// // };
+
+// // export const deleteDelivery = async (id) => {
+// //     const response = await axios.delete(`${API_URL}/admin/deliveries/${id}`, {
+// //         headers: {
+// //             "Content-Type": "application/json",
+// //             "Accept": "application/json",
+// //         },
+// //     });
+// //     return response.data; // بازگشت response.data
+// // };
+
+
 

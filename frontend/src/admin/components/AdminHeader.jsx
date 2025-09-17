@@ -1,15 +1,49 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // اضافه کردن useNavigate
+import { logout } from "../../auth/services/authService"; // اضافه کردن متد logout
+import { showSuccess, showError } from "../../utils/notifications"; // اضافه کردن نوتیفیکیشن‌ها
 import logo from "/src/admin/assets/images/logo.png";
 import avatar from "/src/admin/assets/images/avatar-2.jpg";
+
+
 
 function AdminHeader({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const navigate = useNavigate();
 
   const toggleNotifications = () => setShowNotifications(!showNotifications);
   const toggleComments = () => setShowComments(!showComments);
   const toggleProfile = () => setShowProfile(!showProfile);
+
+  const handleLogout = async () => {
+    try {
+      console.log("Starting logout...");
+      localStorage.setItem("is_logging_out", "true");
+      const response = await logout();
+      console.log("Logout response:", response);
+      localStorage.removeItem("auth_token"); // تغییر از jwt_token به auth_token
+      localStorage.removeItem("otp_token");
+      localStorage.removeItem("identifier");
+      localStorage.removeItem("fingerprint");
+      console.log("localStorage cleared");
+      localStorage.removeItem("is_logging_out");
+      showSuccess(response.message || "با موفقیت از سیستم خارج شدید");
+      navigate("/auth/loginregister", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      localStorage.setItem("is_logging_out", "true");
+      localStorage.removeItem("auth_token"); // تغییر از jwt_token به auth_token
+      localStorage.removeItem("otp_token");
+      localStorage.removeItem("identifier");
+      localStorage.removeItem("fingerprint");
+      console.log("localStorage cleared in catch");
+      localStorage.removeItem("is_logging_out");
+      showError(error.message || "خطا در خروج از سیستم");
+      navigate("/auth/loginregister", { replace: true });
+    }
+  };
 
   return (
     <header className="header">
@@ -143,9 +177,9 @@ function AdminHeader({ toggleSidebar }) {
                 style={{ left: "auto", right: 0 }}
               >
                 <li>
-                  <a href="#" className="dropdown-item">
+                  <button className="dropdown-item" onClick={handleLogout}>
                     <i className="fas fa-sign-out-alt"></i> خروج
-                  </a>
+                  </button>
                 </li>
               </ul>
             </span>
