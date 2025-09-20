@@ -4,7 +4,7 @@ import {
   getImages,
   deleteImage,
   setMainImage,
-  API_URL, // اضافه کردن ایمپورت API_URL
+
 } from "../../../services/market/imageService.js";
 import {
   showSuccess,

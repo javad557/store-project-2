@@ -1,7 +1,9 @@
 // src/utils/api.js
 import axios from "axios";
 
-const axiosInstance = axios.create(); // بدون baseURL
+const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL, // آدرس API از متغیر محیطی
+});
 
 axiosInstance.interceptors.request.use(
   (config) => {

@@ -1,20 +1,19 @@
 import axiosInstance from "../../utils/api"; // مسیر فایل api.js
 
-const API_URL = "/api";
 
 
 export const sendOtp = async (data) => {
-  return await axiosInstance.post(`${API_URL}/auth/sendOtp`, data);
+  return await axiosInstance.post(`/auth/sendOtp`, data);
 };
 
 export const getLoginInfo = async () => {
-  return await axiosInstance.get(`${API_URL}/login-info`);
+  return await axiosInstance.get(`/login-info`);
 };
 
 
 export const verifyOtp = async ({ otp_token, otp, fingerprint }) => {
   try {
-    const response = await axiosInstance.post("/api/auth/verify-otp", {
+    const response = await axiosInstance.post("/auth/verify-otp", {
       otp_token,
       otp,
       fingerprint,
@@ -28,7 +27,7 @@ export const verifyOtp = async ({ otp_token, otp, fingerprint }) => {
 
 export const getRecoveryCodes = async (otpToken) => {
   try {
-    const response = await axiosInstance.get(`${API_URL}/auth/recovery-codes`, {
+    const response = await axiosInstance.get(`/auth/recovery-codes`, {
       params: { otp_token: otpToken },
     });
     return response.data;
@@ -39,7 +38,7 @@ export const getRecoveryCodes = async (otpToken) => {
 
 export const verifyTwoFactor = async ({ otp_token, two_factor_code, fingerprint }) => {
   try {
-    const response = await axiosInstance.post(`${API_URL}/auth/verify-two-factor`, {
+    const response = await axiosInstance.post(`/auth/verify-two-factor`, {
       otp_token,
       two_factor_code,
       fingerprint,
@@ -56,7 +55,7 @@ export const verifyTwoFactor = async ({ otp_token, two_factor_code, fingerprint 
 export const login = async (otpToken) => {
   try {
     console.log("Sending login request with otp_token:", otpToken); // لاگ برای دیباگ
-    const response = await axiosInstance.post(`${API_URL}/auth/login`, {
+    const response = await axiosInstance.post(`/auth/login`, {
       otp_token: otpToken,
     });
     console.log("login response:", response.data); // لاگ برای دیباگ
@@ -76,7 +75,7 @@ export const login = async (otpToken) => {
 
 export const logout = async () => {
   try {
-    const response = await axiosInstance.post(`${API_URL}/auth/logout`);
+    const response = await axiosInstance.post(`/auth/logout`);
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: "خطا در خروج از سیستم" };

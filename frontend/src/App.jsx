@@ -182,7 +182,7 @@ function App() {
               <Route
                 path="gallery/:productId"
                 element={
-                  <ProtectedRoute requiredPermission="read_gallery">
+                  <ProtectedRoute requiredPermission="read_products">
                     <Gallery />
                   </ProtectedRoute>
                 }
@@ -190,7 +190,7 @@ function App() {
               <Route
                 path="gallery/add/:productId"
                 element={
-                  <ProtectedRoute requiredPermission="add_image">
+                  <ProtectedRoute requiredPermission="add_product">
                     <AddImage />
                   </ProtectedRoute>
                 }

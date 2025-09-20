@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\DeliveryRequest;
 use App\Models\PurchaseProcess\DeliveryMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\DeliveryMethodResource;
 
 class DeliveryController extends Controller
 {
@@ -14,22 +15,25 @@ class DeliveryController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-         $authHeader = $request->header('Authorization', 'هدر Authorization ارسال نشده');
-        Log::info('Authorization Header', [
-            'url' => $request->fullUrl(),
-            'method' => $request->method(),
-            'authorization' => $authHeader,
-        ]);
-        // Log::info('test',['deliverytest'=>'yes']);
-         try{
-            $deliveries = DeliveryMethod::all();
-            return response()->json($deliveries);
-        } catch (\Exception $e) {
-            Log::error('خطا در دریافت روش های ارسال: ' . $e->getMessage());
-            return response()->json(['error' => 'خطا در دریافت روش های ارسال'], 500);
+{
+    try {
+        $deliveries = DeliveryMethod::all();
+        if ($deliveries->isEmpty()) {
+            return response()->json([
+                'data' => [],
+                'message' => 'هیچ روش ارسالی یافت نشد',
+            ], 200);
         }
+
+        return response()->json([
+            'data' => $deliveries,
+            'message' => 'روش‌های ارسال با موفقیت دریافت شد',
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('خطا در سمت سرور: ' . $e->getMessage());
+        return response()->json(['error' => 'خطا در سمت سرور'], 500);
     }
+}
 
     /**
      * Store a newly created resource in storage.
@@ -46,9 +50,9 @@ class DeliveryController extends Controller
             return response()->json([
                 'message'=>'روش ارسال مورد نظر با موفقیت افزوده شد'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable  $e) {
             Log::error('خطا در افزودن روش ارسال: ' . $e->getMessage());
-            return response()->json(['error' => 'خطا در افزودن روش ارسال'], 500);
+            return response()->json(['error' => 'خطای سمت سرور'], 500);
         }
     }
 
@@ -57,7 +61,7 @@ class DeliveryController extends Controller
      */
     public function show(DeliveryMethod $delivery)
     {
-          try{
+        try{
             return response()->json($delivery);
         } catch (\Exception $e) {
             Log::error('خطا در دریافت روش ارسال مورد نظر: ' . $e->getMessage());

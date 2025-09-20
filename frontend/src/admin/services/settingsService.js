@@ -1,19 +1,19 @@
 import axiosInstance from "../../utils/api"; // مسیر فایل api.js
 
-const API_URL = "/api";
+
 
 export const getSettings = async () => {
-  return await axiosInstance.get(`${API_URL}/loginregistermanagment`);
+  return await axiosInstance.get(`/loginregistermanagment`);
 };
 
 export const getDelivery = async (id) => {
-  return await axiosInstance.get(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.get(`/admin/deliveries/${id}`);
 };
 
 
 export const updateSettings = async (data) => {
     const response = await axiosInstance.put(
-        `${API_URL}/loginregistermanagment/1`,
+        `/loginregistermanagment/1`,
         data,
         {
             headers: {
@@ -26,11 +26,11 @@ export const updateSettings = async (data) => {
 };
 
 export const deleteDelivery = async (id) => {
-  return await axiosInstance.delete(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.delete(`/admin/deliveries/${id}`);
 };
 
 export const addDelivery = async (data) => {
-    const response = await axiosInstance.post(`${API_URL}/admin/deliveries`, data, {
+    const response = await axiosInstance.post(`/admin/deliveries`, data, {
         headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",

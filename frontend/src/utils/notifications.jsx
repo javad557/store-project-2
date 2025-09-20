@@ -37,3 +37,25 @@ export const confirmDelete = async (itemName) => {
   });
   return result.isConfirmed;
 };
+
+
+// تابع عمومی handleDelete
+export const handleDelete = async (
+  id, // شناسه آیتم برای حذف
+  name, // نام آیتم برای نمایش توی پیام تأیید
+  deleteFunction, // تابع حذف API (مثل deleteDelivery یا deleteBrand)
+  setItems, // تابع setter برای به‌روزرسانی state
+  items, // آرایه فعلی (مثل deliveries یا brands)
+  entityName // نام موجودیت برای پیام خطا (مثل "روش ارسال" یا "برند")
+) => {
+  const isConfirmed = await confirmDelete(name);
+  if (isConfirmed) {
+    try {
+      const response = await deleteFunction(id);
+      setItems(items.filter((item) => item.id !== id));
+      showSuccess(response.data.message);
+    } catch (error) {
+      showError(error.response?.data?.error || `حذف ${entityName} با خطا مواجه شد`);
+    }
+  }
+};

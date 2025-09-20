@@ -1,27 +1,26 @@
 import axiosInstance from "../../utils/api"; // مسیر فایل api.js
 
 
-const API_URL = "/api";
 
 export const getDeliveries = async () => {
-  return await axiosInstance.get(`${API_URL}/admin/deliveries`);
+  return await axiosInstance.get(`/admin/deliveries`);
 };
 
 export const getDelivery = async (id) => {
-  return await axiosInstance.get(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.get(`/admin/deliveries/${id}`);
 };
 
 
 export const updateDelivery = async (id, data) => {
-  return await axiosInstance.put(`${API_URL}/admin/deliveries/${id}`, data);
+  return await axiosInstance.put(`/admin/deliveries/${id}`, data);
 };
 
 export const deleteDelivery = async (id) => {
-  return await axiosInstance.delete(`${API_URL}/admin/deliveries/${id}`);
+  return await axiosInstance.delete(`/admin/deliveries/${id}`);
 };
 
 export const addDelivery = async (data) => {
-    const response = await axiosInstance.post(`${API_URL}/admin/deliveries`, data, {
+    const response = await axiosInstance.post(`/admin/deliveries`, data, {
         headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -62,7 +61,7 @@ export const addDelivery = async (data) => {
 
 // // export const updateDelivery = async (id, data) => {
 // //     const response = await axios.put(
-// //         `${API_URL}/admin/deliveries/${id}`,
+// //         `/admin/deliveries/${id}`,
 // //         data,
 // //         {
 // //             headers: {
@@ -75,7 +74,7 @@ export const addDelivery = async (data) => {
 // // };
 
 // // export const deleteDelivery = async (id) => {
-// //     const response = await axios.delete(`${API_URL}/admin/deliveries/${id}`, {
+// //     const response = await axios.delete(`/admin/deliveries/${id}`, {
 // //         headers: {
 // //             "Content-Type": "application/json",
 // //             "Accept": "application/json",
