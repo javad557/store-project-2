@@ -14,7 +14,7 @@ class DeliveryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
 {
     try {
         $deliveries = DeliveryMethod::all();
@@ -29,7 +29,7 @@ class DeliveryController extends Controller
             'data' => $deliveries,
             'message' => 'روش‌های ارسال با موفقیت دریافت شد',
         ], 200);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         Log::error('خطا در سمت سرور: ' . $e->getMessage());
         return response()->json(['error' => 'خطا در سمت سرور'], 500);
     }
@@ -62,8 +62,10 @@ class DeliveryController extends Controller
     public function show(DeliveryMethod $delivery)
     {
         try{
-            return response()->json($delivery);
-        } catch (\Exception $e) {
+            return response()->json([
+            'data' => $delivery,
+        ], 200);
+        } catch (\Throwable $e) {
             Log::error('خطا در دریافت روش ارسال مورد نظر: ' . $e->getMessage());
             return response()->json(['error' => 'خطا در دریافت روش ارسال مورد نظر'], 500);
         }
@@ -84,7 +86,7 @@ class DeliveryController extends Controller
             return response()->json([
                 'message'=>'روش ارسال مورد نظر با موفقیت ویرایش شد'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('خطا در ویرایش روش مورد نظر: ' . $e->getMessage());
             return response()->json(['error' => 'خطا در ویرایش روش ارسال مورد نظر'], 500);
         }
@@ -100,7 +102,7 @@ class DeliveryController extends Controller
             return response()->json([
                 'message'=>'روش ارسال مورد نظر با موفقیت حذف شد'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('خطا در حذف روش مورد نظر: ' . $e->getMessage());
             return response()->json(['error' => 'خطا در حذف روش ارسال مورد نظر'], 500);
         }

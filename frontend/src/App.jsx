@@ -53,7 +53,7 @@ import RecoveryCodes from "./auth/pages/RecoveryCodes";
 import TwoFactorVerify from "./auth/pages/TwoFactorVerify";
 
 function App() {
-  console.log('App component rendered');
+  console.log("App component rendered");
   return (
     <Router>
       <AuthProvider>
@@ -76,7 +76,7 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute position="admin">
-                <AdminLayout  />
+                <AdminLayout />
               </ProtectedRoute>
             }
           >
