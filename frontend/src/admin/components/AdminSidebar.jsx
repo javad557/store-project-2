@@ -112,6 +112,10 @@ function AdminSidebar() {
               <span>لاگین رجیستر</span>
           </Link>
 
+            <Link to="/admin/pages" className="sidebar-link">
+              <span>صفحات اطلاع رسانی</span>
+          </Link>
+
           
         </section>
       </section>

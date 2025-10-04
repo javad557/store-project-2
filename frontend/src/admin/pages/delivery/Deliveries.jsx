@@ -14,10 +14,6 @@ function Deliveries (){
            const response = await getDeliveries();
            return Array.isArray(response.data.data) ? response.data.data : [];
       },
-     
-       onError: (error) => {
-      showError(error.response?.data?.error || 'دریافت روش‌های ارسال با خطا مواجه شد');
-    },
    })
 
     if(isError){

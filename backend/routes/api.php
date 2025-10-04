@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Market\VariantController;
 use App\Http\Controllers\Admin\Marketing\AmazingController;
 use App\Http\Controllers\Admin\Marketing\BannerController;
 use App\Http\Controllers\Admin\Marketing\CopanController;
+use App\Http\Controllers\Admin\Marketing\PageController;
 use App\Http\Controllers\Admin\User\AdminUserController;
 use App\Http\Controllers\Admin\User\CustomerUserController;
 use App\Http\Controllers\Admin\User\PermissionController;
@@ -146,6 +147,15 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
             Route::put('/{amazing}', [AmazingController::class, 'update'])->middleware('permission:edit_amazing');
              Route::patch('/changeStatus/{amazing}', [AmazingController::class, 'changeStatus'])->middleware('permission:edit_amazing');
             Route::delete('/{amazing}', [AmazingController::class, 'destroy'])->middleware('permission:edit_amazing');
+        });
+
+        Route::prefix('pages')->group(function () {
+            Route::get('/', [pageController::class, 'index'])->middleware('permission:read_pages');
+             Route::get('/{page}', [pageController::class, 'show'])->middleware('permission:read_pages');
+             Route::post('/', [pageController::class, 'store'])->middleware('permission:add_pages');
+             Route::put('/{page}', [pageController::class, 'update'])->middleware('permission:edit_pages');
+            Route::put('updateStatus/{page}', [pageController::class, 'updateStatus'])->middleware('permission:edit_pages');
+            Route::delete('/{page}', [pageController::class, 'destroy'])->middleware('permission:edit_pages');
         });
 
     });

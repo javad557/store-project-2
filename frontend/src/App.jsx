@@ -51,6 +51,9 @@ import OtpVerify from "./auth/pages/OtpVerify";
 import Terms from "./auth/pages/Terms";
 import RecoveryCodes from "./auth/pages/RecoveryCodes";
 import TwoFactorVerify from "./auth/pages/TwoFactorVerify";
+import Pages from "./admin/pages/pages/Pages.jsx";
+import AddPage from "./admin/pages/pages/AddPage.jsx";
+import Editpage from "./admin/pages/pages/EditPage.jsx";
 
 function App() {
   console.log("App component rendered");
@@ -400,6 +403,32 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="pages"
+              element={
+                <ProtectedRoute requiredPermission="read_pages">
+                  <Pages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="pages/add"
+              element={
+                <ProtectedRoute requiredPermission="add_page">
+                  <AddPage />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="pages/edit/:id"
+              element={
+                <ProtectedRoute requiredPermission="edit_delivery">
+                  <Editpage />
+                </ProtectedRoute>
+              }
+            />
+
           </Route>
           <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
         </Routes>
