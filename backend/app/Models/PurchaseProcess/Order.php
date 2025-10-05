@@ -42,11 +42,21 @@ class Order extends Model
 
     public function address()
     {
-        return $this->belongsTo(Address::class);
+        return $this->belongsTo(Address::class,'address_id');
     }
 
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function delivery_method()
+    {
+         return $this->belongsTo(DeliveryMethod::class,'delivery_id');
+    }
+
+    public function payment_method()
+    {
+         return $this->belongsTo(PaymentMethod::class,'payment_id');
     }
 }

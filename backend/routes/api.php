@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\DeliveryController;
+
 use App\Http\Controllers\Admin\LoginRegisterManagmentController;
 use App\Http\Controllers\Admin\Market\BrandController;
 use App\Http\Controllers\Admin\Market\CategoryController;
@@ -17,6 +17,10 @@ use App\Http\Controllers\Admin\User\AdminUserController;
 use App\Http\Controllers\Admin\User\CustomerUserController;
 use App\Http\Controllers\Admin\User\PermissionController;
 use App\Http\Controllers\Admin\User\RoleController;
+use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\Ticket\TicketController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use Illuminate\Http\Request;
@@ -207,6 +211,36 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
         Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:add_delivery');
         Route::put('/{delivery}', [DeliveryController::class, 'update'])->middleware('permission:edit_delivery');
         Route::delete('/{delivery}', [DeliveryController::class, 'destroy'])->middleware('permission:edit_delivery');
+    });
+
+     Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->middleware('permission:read_deliveries');
+        
+        // Route::get('/{delivery}', [DeliveryController::class, 'show'])->middleware('permission:edit_delivery');
+        // Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:add_delivery');
+        // Route::put('/{delivery}', [DeliveryController::class, 'update'])->middleware('permission:edit_delivery');
+        // Route::delete('/{delivery}', [DeliveryController::class, 'destroy'])->middleware('permission:edit_delivery');
+    });
+
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->middleware('permission:read_orders');
+        Route::put('/{id}', [OrderController::class, 'updateStatus'])->middleware('permission:edit_orders');
+        Route::get('/{order}', [OrderController::class, 'show'])->middleware('permission:read_orders');
+        Route::get('/order_items/{order}', [OrderController::class, 'order_items'])->middleware('permission:read_orders');
+        // Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:read_orders');
+        // Route::put('/{order}', [DeliveryController::class, 'update'])->middleware('permission:read_orders');
+        // Route::delete('/{order}', [DeliveryController::class, 'destroy'])->middleware('permission:read_orders');
+    });
+
+
+     Route::prefix('tickets')->group(function () {
+        Route::get('/', [TicketController::class, 'index'])->middleware('permission:read_tickets');
+        // Route::put('/{ticket}', [TicketController::class, 'updateStatus'])->middleware('permission:edit_tickets');
+        // Route::get('/{ticket}', [TicketController::class, 'show'])->middleware('permission:read_tickets');
+        // Route::get('/order_items/{ticket}', [TicketController::class, 'order_items'])->middleware('permission:read_tickets');
+        // Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:read_orders');
+        // Route::put('/{order}', [DeliveryController::class, 'update'])->middleware('permission:read_orders');
+        // Route::delete('/{order}', [DeliveryController::class, 'destroy'])->middleware('permission:read_orders');
     });
 
    

@@ -104,6 +104,29 @@ function AdminSidebar() {
             </Link>
           </div>
 
+           {/* بخش تیکت ها */}
+          <section
+            className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "tickets" ? "sidebar-group-link-active" : ""}`}
+            onClick={() => toggleSection("tickets")}
+          >
+            <div>
+              <i className="fas fa-users icon"></i>
+              <span>تیکت ها</span>
+            </div>
+            <i className={`fas fa-angle-down angle ${openSection === "tickets" ? "rotate-90" : ""}`}></i>
+          </section>
+          <div className={`sidebar-dropdown ${openSection === "tickets" ? "sidebar-group-link-active" : ""}`}>
+
+            <Link to="/admin/ticket/tickets" className="sidebar-link">
+              <span>تیکت ها</span>
+            </Link>
+
+          </div>
+
+          <Link to="/admin/orders" className="sidebar-link">
+              <span>سفارشات</span>
+          </Link>
+
           <Link to="/admin/deliveries" className="sidebar-link">
               <span>روش‌های ارسال</span>
           </Link>
@@ -112,7 +135,7 @@ function AdminSidebar() {
               <span>لاگین رجیستر</span>
           </Link>
 
-            <Link to="/admin/pages" className="sidebar-link">
+          <Link to="/admin/pages" className="sidebar-link">
               <span>صفحات اطلاع رسانی</span>
           </Link>
 

@@ -53,7 +53,10 @@ const statusMutation = useMutation({
   };
 
   const handleStatusChange = (id, currentStatus) => {
+ 
+    
     const newStatus = currentStatus === 1 ? 0 : 1; // تغییر وضعیت (1 به 0 یا 0 به 1)
+    console.log(newStatus);
     statusMutation.mutate({ id, status: newStatus });
   };
 

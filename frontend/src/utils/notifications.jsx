@@ -59,3 +59,29 @@ export const handleDelete = async (
     }
   }
 };
+
+
+export const confirmOrderStatusChange =async (currentStatus,availableStatuses)=>{
+  const result = await Swal.fire({
+        title: "تغییر وضعیت سفارش",
+        text: `وضعیت فعلی: ${currentStatus}. وضعیت جدید را انتخاب کنید:`,
+        input: "select",
+        inputOptions: availableStatuses.reduce((acc, status) => {
+          acc[status] = status;
+          return acc;
+        }, {}),
+        inputValue: currentStatus,
+        showCancelButton: true,
+        confirmButtonText: "تأیید",
+        cancelButtonText: "لغو",
+        inputValidator: (value) => {
+          if (!value) {
+            return "لطفاً یک وضعیت انتخاب کنید!";
+          }
+          if (value === currentStatus) {
+            return "لطفاً وضعیتی متفاوت با وضعیت فعلی انتخاب کنید!";
+          }
+        },
+      })
+      return result;
+}

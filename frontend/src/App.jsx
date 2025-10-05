@@ -54,6 +54,11 @@ import TwoFactorVerify from "./auth/pages/TwoFactorVerify";
 import Pages from "./admin/pages/pages/Pages.jsx";
 import AddPage from "./admin/pages/pages/AddPage.jsx";
 import Editpage from "./admin/pages/pages/EditPage.jsx";
+import Orders from "./admin/pages/order/Orders.jsx";
+import DetailOrder from "./admin/pages/order/detail.jsx";
+import OrderItems from "./admin/pages/order/orderItems.jsx";
+import Tickets from "./admin/pages/ticket/Tickets.jsx";
+import Ticket from "./admin/pages/ticket/Ticket.jsx";
 
 function App() {
   console.log("App component rendered");
@@ -428,6 +433,55 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="orders"
+              element={
+                <ProtectedRoute requiredPermission="read_orders">
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="orders/detail/:id"
+              element={
+                <ProtectedRoute requiredPermission="read_orders">
+                  <DetailOrder />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="orders/order_items/:id"
+              element={
+                <ProtectedRoute requiredPermission="read_orders">
+                  <OrderItems />
+                </ProtectedRoute>
+              }
+            />
+
+
+          <Route path="ticket">
+
+            <Route
+              path="tickets"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <Tickets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="ticket/:id"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <Ticket />
+                </ProtectedRoute>
+              }
+            />
+
+
+            </Route>
 
           </Route>
           <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />

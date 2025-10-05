@@ -31,12 +31,12 @@ class Ticket extends Model
     ];
      public function categoryTicket()
     {
-        return $this->belongsTo(CategoryTicket::class);
+        return $this->belongsTo(CategoryTicket::class,'category_id');
     }
 
     public function priorityTicket()
     {
-        return $this->belongsTo(PriorityTicket::class);
+        return $this->belongsTo(PriorityTicket::class,'priority_id');
     }
 
     public function user()
