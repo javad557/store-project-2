@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\LoginRegisterManagmentController;
 use App\Http\Controllers\Admin\Market\BrandController;
 use App\Http\Controllers\Admin\Market\CategoryController;
@@ -13,19 +14,22 @@ use App\Http\Controllers\Admin\Marketing\AmazingController;
 use App\Http\Controllers\Admin\Marketing\BannerController;
 use App\Http\Controllers\Admin\Marketing\CopanController;
 use App\Http\Controllers\Admin\Marketing\PageController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\Ticket\CategoryTicketController;
+use App\Http\Controllers\Admin\Ticket\TicketController;
 use App\Http\Controllers\Admin\User\AdminUserController;
 use App\Http\Controllers\Admin\User\CustomerUserController;
 use App\Http\Controllers\Admin\User\PermissionController;
 use App\Http\Controllers\Admin\User\RoleController;
-use App\Http\Controllers\Admin\DeliveryController;
-use App\Http\Controllers\Admin\Ticket\TicketController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Ticket\PriorityTicketController;
+
+
 
 
 
@@ -235,12 +239,21 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
 
      Route::prefix('tickets')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->middleware('permission:read_tickets');
-        // Route::put('/{ticket}', [TicketController::class, 'updateStatus'])->middleware('permission:edit_tickets');
-        // Route::get('/{ticket}', [TicketController::class, 'show'])->middleware('permission:read_tickets');
-        // Route::get('/order_items/{ticket}', [TicketController::class, 'order_items'])->middleware('permission:read_tickets');
-        // Route::post('/', [DeliveryController::class, 'store'])->middleware('permission:read_orders');
-        // Route::put('/{order}', [DeliveryController::class, 'update'])->middleware('permission:read_orders');
-        // Route::delete('/{order}', [DeliveryController::class, 'destroy'])->middleware('permission:read_orders');
+        Route::get('/allTickets', [TicketController::class, 'allTickets'])->middleware('permission:read_tickets');
+        Route::post('/change_status/{ticket}', [TicketController::class, 'change_status'])->middleware('permission:read_tickets');
+        Route::get('/{ticket}', [TicketController::class, 'show'])->where('ticket', '[0-9]+')->middleware('permission:read_tickets');
+        Route::post('/', [TicketController::class, 'store'])->middleware('permission:read_orders');
+        Route::post('/mark_tickets_as_seen', [TicketController::class, 'mark_tickets_as_seen'])->middleware('permission:read_orders');
+
+        Route::get('/category_tickets', [CategoryTicketController::class, 'index'])->middleware('permission:read_tickets');
+        Route::delete('/category_tickets/{category_ticket}', [CategoryTicketController::class, 'destroy'])->middleware('permission:edit_tickets');
+        Route::put('/category_tickets/{category_ticket}', [CategoryTicketController::class, 'update_category_tcicket'])->middleware('permission:edit_tickets');
+        Route::post('/category_tickets', [CategoryTicketController::class, 'add_category_ticket'])->middleware('permission:edit_tickets');
+
+        Route::get('/priority_tickets', [PriorityTicketController::class, 'index'])->middleware('permission:read_tickets');
+        Route::delete('/priority_tickets/{priority_ticket}', [PriorityTicketController::class, 'destroy'])->middleware('permission:edit_tickets');
+        Route::put('/priority_tickets/{priority_ticket}', [PriorityTicketController::class, 'update_priority_tcicket'])->middleware('permission:edit_tickets');
+        Route::post('/priority_tickets', [PriorityTicketController::class, 'add_priority_ticket'])->middleware('permission:edit_tickets');
     });
 
    

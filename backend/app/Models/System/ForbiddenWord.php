@@ -11,4 +11,6 @@ class ForbiddenWord extends Model
     use HasFactory,SoftDeletes;
 
     protected $fillable = ['word'];
+
+    protected $table = 'forbidden_words';
 }

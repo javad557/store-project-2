@@ -15,8 +15,8 @@ class Ticket extends Model
     use HasFactory,SoftDeletes;
 
     protected $fillable = [
-        'category_ticket_id',
-        'priority_ticket_id',
+        'category_id',
+        'priority_id',
         'user_id',
         'title',
         'body',
@@ -57,4 +57,24 @@ class Ticket extends Model
 {
     return $this->hasMany(FileTicket::class);
 }
+
+public function hasUnseenDescendants()
+{
+    $hasUnseen = false;
+    
+    // جمع‌آوری همه فرزندان به‌صورت بازگشتی
+    $checkChildren = function ($ticket) use (&$checkChildren, &$hasUnseen) {
+        foreach ($ticket->children as $child) {
+            if ($child->seen == 0) {
+                $hasUnseen = true;
+                return;
+            }
+            $checkChildren($child); // بررسی فرزندانِ فرزند
+        }
+    };
+    
+    $checkChildren($this);
+    return $hasUnseen;
+}
+
 }

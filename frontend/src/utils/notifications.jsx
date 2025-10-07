@@ -85,3 +85,17 @@ export const confirmOrderStatusChange =async (currentStatus,availableStatuses)=>
       })
       return result;
 }
+
+
+export const confirmChangeTicketStatus= async()=>{
+  const result = await Swal.fire({
+    title: "ایا میخواهید تیکت را ببندید؟",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    cancelButtonColor: "#0d6efd",
+    confirmButtonText: "بله",
+    cancelButtonText: "خیر",
+  });
+  return result;
+}

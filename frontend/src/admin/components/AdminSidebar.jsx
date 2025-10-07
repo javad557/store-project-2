@@ -121,6 +121,14 @@ function AdminSidebar() {
               <span>تیکت ها</span>
             </Link>
 
+            <Link to="/admin/ticket/category_tickets" className="sidebar-link">
+              <span>دسته بندی تیکت ها</span>
+            </Link>
+
+            <Link to="/admin/ticket/priority_tickets" className="sidebar-link">
+              <span> اولویت تیکت ها</span>
+            </Link>
+
           </div>
 
           <Link to="/admin/orders" className="sidebar-link">

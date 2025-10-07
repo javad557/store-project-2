@@ -59,6 +59,11 @@ import DetailOrder from "./admin/pages/order/detail.jsx";
 import OrderItems from "./admin/pages/order/orderItems.jsx";
 import Tickets from "./admin/pages/ticket/Tickets.jsx";
 import Ticket from "./admin/pages/ticket/Ticket.jsx";
+import CategoryTickets from "./admin/pages/ticket/category/CategoryTickets.jsx";
+import AddCategoryTicket from "./admin/pages/ticket/category/AddCategoryTicket.jsx";
+import PriorityTickets from "./admin/pages/ticket/priority/PriorityTickets.jsx";
+import AddPriorityTicket from "./admin/pages/ticket/priority/AddPriorityTicket.jsx";
+
 
 function App() {
   console.log("App component rendered");
@@ -471,6 +476,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="ticket/:id"
               element={
@@ -480,6 +486,41 @@ function App() {
               }
             />
 
+            <Route
+              path="category_tickets"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <CategoryTickets />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="category_tickets/add"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <AddCategoryTicket />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="priority_tickets"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <PriorityTickets />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="priority_tickets/add"
+              element={
+                <ProtectedRoute requiredPermission="read_tickets">
+                  <AddPriorityTicket />
+                </ProtectedRoute>
+              }
+            />
 
             </Route>
 
