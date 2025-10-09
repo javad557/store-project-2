@@ -22,7 +22,7 @@ function Editpage(){
     })
 
 
-     const { data, isLoading, error,isError }=useQuery({
+    const { data, isLoading, error,isError }=useQuery({
         queryKey: ['page',id],
         queryFn:() => getPage(id),
     })

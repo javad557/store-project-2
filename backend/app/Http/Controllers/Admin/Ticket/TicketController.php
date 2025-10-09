@@ -80,6 +80,37 @@ public function index()
         }
     }
 
+    public function new_tickets()
+{
+    Log::info('check',['check'=>'yes']);
+    try {
+        $new_tickets = Ticket::with([
+            'user',
+            'categoryTicket',
+            'priorityTicket',
+        ])
+            ->where('seen', 0)
+            ->get()
+            ->map(function ($ticket) {
+                $rootTicket = $ticket->getRootTicket();
+                $ticket->root_parent = $rootTicket ? [
+                    'id' => $rootTicket->id,
+                    'title' => $rootTicket->title,
+                ] : null;
+                return $ticket;
+            });
+
+        return response()->json([
+            'data' => $new_tickets,
+            'message' => 'تیکت‌ها با موفقیت دریافت شد',
+        ], 200);
+    } catch (\Throwable $e) {
+        Log::error($e->getMessage());
+        return response()->json([
+            'error' => 'دریافت تیکت‌های مورد نظر با خطا مواجه شد'
+        ], 500);
+    }
+}
     /**
      * Store a newly created resource in storage.
      */

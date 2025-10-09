@@ -120,6 +120,7 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
         Route::prefix('comments')->group(function () {
             Route::get('/', [CommentController::class, 'index'])->middleware('permission:read_comments');
             Route::patch('/changeStatus/{comment}', [CommentController::class, 'changeStatus'])->middleware('permission:read_comments');
+            Route::get('/new_comments', [CommentController::class, 'new_comments'])->middleware('permission:read_comments');
             // Route::get('/{image}/{product}', [CommentController::class, 'show']);
             // Route::post('/{product}', [CommentController::class, 'store']);
             // Route::put('/{variant}', [CommentController::class, 'update']);
@@ -173,7 +174,9 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
          Route::prefix('adminusers')->group(function () {
             Route::get('/', [AdminUserController::class, 'index'])->middleware('permission:read_adminusers');
             // Route::patch('/changeStatus/{comment}', [AdminUserController::class, 'changeStatus']);
-            Route::get('/{adminuser}', [AdminUserController::class, 'show'])->middleware('permission:edit_adminuser');
+             Route::get('/get_user', [AdminUserController::class, 'get_user'])->middleware('permission:edit_adminuser');
+            Route::get('/{adminuser}', [AdminUserController::class, 'show'])->where('ticket', '[0-9]+')->middleware('permission:edit_adminuser');
+           
             Route::post('/', [AdminUserController::class, 'store'])->middleware('permission:add_adminuser');
             Route::put('/{adminuser}', [AdminUserController::class, 'update'])->middleware('permission:edit_adminuser');
             Route::delete('/{adminuser}', [AdminUserController::class, 'destroy'])->middleware('permission:edit_adminuser');
@@ -240,6 +243,7 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
      Route::prefix('tickets')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->middleware('permission:read_tickets');
         Route::get('/allTickets', [TicketController::class, 'allTickets'])->middleware('permission:read_tickets');
+         Route::get('/newTickets', [TicketController::class, 'new_tickets'])->middleware('permission:read_tickets');
         Route::post('/change_status/{ticket}', [TicketController::class, 'change_status'])->middleware('permission:read_tickets');
         Route::get('/{ticket}', [TicketController::class, 'show'])->where('ticket', '[0-9]+')->middleware('permission:read_tickets');
         Route::post('/', [TicketController::class, 'store'])->middleware('permission:read_orders');

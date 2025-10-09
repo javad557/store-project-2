@@ -119,9 +119,9 @@ function EditProduct() {
     const fetchBrands = async () => {
       try {
         const response = await getBrands();
-        console.log("برندها دریافت‌شده:", response.data);
-        setBrands(Array.isArray(response.data) ? response.data : []);
-        if (!response.data.length) {
+        console.log("برندها دریافت‌شده:", response.data.data); // اصلاح دسترسی به data.data
+        setBrands(Array.isArray(response.data.data) ? response.data.data : []); // اصلاح دسترسی به data.data
+        if (!response.data.data.length) { // اصلاح شرط
           showError("هیچ برندی دریافت نشد");
         }
       } catch (error) {

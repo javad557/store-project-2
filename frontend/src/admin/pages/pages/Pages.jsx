@@ -12,7 +12,6 @@ function Pages() {
       const response = await getPages();
       return Array.isArray(response.data.data) ? response.data.data : [];
     },
-    // refetchOnWindowFocus: false 
 
   });
 

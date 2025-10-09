@@ -57,3 +57,49 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
+
+/* حذف ظاهر پیش‌فرض لینک و تنظیم استایل متن */
+.ticket-link {
+  text-decoration: none; /* حذف زیرخط */
+  color: inherit; /* استفاده از رنگ متن والد (معمولاً مشکی یا رنگ تم) */
+}
+
+/* اضافه کردن حالت pointer موقع hover */
+.ticket-link:hover {
+  cursor: pointer;
+}
+
+/* اختیاری: برای هماهنگی بیشتر با استایل بقیه متن */
+.ticket-link .notification-user,
+.ticket-link .notification-text {
+  margin: 0;
+  padding: 0;
+}
+
+/* استایل لینک‌های تیکت و کامنت */
+.ticket-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.ticket-link:hover {
+  cursor: pointer;
+}
+
+/* استایل آیکون انسان */
+.user-icon {
+  font-size: 1rem; /* اندازه آیکون */
+  color: #555; /* رنگ خاکستری تیره، می‌تونی تغییر بدی */
+  margin-right: 8px; /* فاصله از متن */
+}
+
+/* هماهنگی استایل متن‌ها */
+.notification-text {
+  margin: 0;
+  padding: 0;
+}
+
+.header-username {
+  margin: 0;
+  padding: 0;
+}

@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import PropTypes from "prop-types";
 
-function AdminSidebar() {
-  const [openSection, setOpenSection] = useState(null); // برای مدیریت بخش‌های دراپ‌داون
+function AdminSidebar({ user, isUserLoading, userError, isUserError }) {
+  const [openSection, setOpenSection] = useState(null);
 
   const toggleSection = (section) => {
-    setOpenSection(openSection === section ? null : section); // باز/بسته کردن بخش
+    setOpenSection(openSection === section ? null : section);
   };
 
   return (
     <aside id="sidebar" className="sidebar">
       <section className="sidebar-container" style={{ height: "100vh", overflowY: "auto" }}>
+
         <section className="sidebar-wrapper">
           <Link to="/admin/dashboard" className="sidebar-link">
             <i className="fas fa-home"></i>
             <span>خانه</span>
           </Link>
-
           {/* بخش مارکت */}
           <section
             className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "market" ? "sidebar-group-link-active" : ""}`}
@@ -46,8 +47,7 @@ function AdminSidebar() {
               <span>نظرات</span>
             </Link>
           </div>
-
-          {/* بخش مارکتینگ */}
+          {/* سایر بخش‌ها مانند مارکتینگ، کاربران، تیکت‌ها و ... بدون تغییر */}
           <section
             className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "marketing" ? "sidebar-group-link-active" : ""}`}
             onClick={() => toggleSection("marketing")}
@@ -72,16 +72,13 @@ function AdminSidebar() {
               <span>فروش شگفت‌انگیز</span>
             </Link>
           </div>
-
-
- {/* بخش کاربران و سطوح دسترسی */}
           <section
             className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "users" ? "sidebar-group-link-active" : ""}`}
             onClick={() => toggleSection("users")}
           >
             <div>
               <i className="fas fa-users icon"></i>
-              <span>کاربران و دسترسی ها</span>
+              <span>کاربران و دسترسی‌ها</span>
             </div>
             <i className={`fas fa-angle-down angle ${openSection === "users" ? "rotate-90" : ""}`}></i>
           </section>
@@ -103,56 +100,57 @@ function AdminSidebar() {
               <span>نقش‌ها</span>
             </Link>
           </div>
-
-           {/* بخش تیکت ها */}
           <section
             className={`sidebar-part-title sidebar-dropdown-toggle ${openSection === "tickets" ? "sidebar-group-link-active" : ""}`}
             onClick={() => toggleSection("tickets")}
           >
             <div>
               <i className="fas fa-users icon"></i>
-              <span>تیکت ها</span>
+              <span>تیکت‌ها</span>
             </div>
             <i className={`fas fa-angle-down angle ${openSection === "tickets" ? "rotate-90" : ""}`}></i>
           </section>
           <div className={`sidebar-dropdown ${openSection === "tickets" ? "sidebar-group-link-active" : ""}`}>
-
             <Link to="/admin/ticket/tickets" className="sidebar-link">
-              <span>تیکت ها</span>
+              <i className="fas fa-ticket-alt"></i>
+              <span>تیکت‌ها</span>
             </Link>
-
             <Link to="/admin/ticket/category_tickets" className="sidebar-link">
-              <span>دسته بندی تیکت ها</span>
+              <i className="fas fa-folder"></i>
+              <span>دسته‌بندی تیکت‌ها</span>
             </Link>
-
             <Link to="/admin/ticket/priority_tickets" className="sidebar-link">
-              <span> اولویت تیکت ها</span>
+              <i className="fas fa-exclamation-circle"></i>
+              <span>اولویت تیکت‌ها</span>
             </Link>
-
           </div>
-
           <Link to="/admin/orders" className="sidebar-link">
-              <span>سفارشات</span>
+            <i className="fas fa-shopping-bag"></i>
+            <span>سفارشات</span>
           </Link>
-
           <Link to="/admin/deliveries" className="sidebar-link">
-              <span>روش‌های ارسال</span>
+            <i className="fas fa-truck"></i>
+            <span>روش‌های ارسال</span>
           </Link>
-
-           <Link to="/admin/loginregistermanagment" className="sidebar-link">
-              <span>لاگین رجیستر</span>
+          <Link to="/admin/loginregistermanagment" className="sidebar-link">
+            <i className="fas fa-sign-in-alt"></i>
+            <span>لاگین رجیستر</span>
           </Link>
-
           <Link to="/admin/pages" className="sidebar-link">
-              <span>صفحات اطلاع رسانی</span>
+            <i className="fas fa-file-alt"></i>
+            <span>صفحات اطلاع‌رسانی</span>
           </Link>
-
-          
         </section>
       </section>
     </aside>
   );
 }
 
-export default AdminSidebar;
+AdminSidebar.propTypes = {
+  user: PropTypes.object,
+  isUserLoading: PropTypes.bool.isRequired,
+  userError: PropTypes.object,
+  isUserError: PropTypes.bool.isRequired,
+};
 
+export default AdminSidebar;

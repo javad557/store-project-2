@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\User\AdminUserRequest;
 use App\Models\User\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -117,6 +118,26 @@ class AdminUserController extends Controller
         return response()->json([
             'error' => 'خطایی در دریافت اطلاعات کاربر رخ داد',
         ], 500);
+    }
+}
+
+
+public function get_user(){
+    try{
+        if( Auth::guard('api')->check()){
+        $user = Auth::guard('api')->user();
+        $userInformations = User::with(['permissions', 'roles.permissions'])->findOrFail($user->id);
+    }
+    return response()->json([
+        'data'=>$userInformations,
+    ],200);
+
+    }
+    catch(\Throwable $e){
+        Log::error($e->getMessage());
+        return response()->json([
+            'error'=>'دریافت کاربر مورد نظر با خطا مواجه شد',
+        ],500);
     }
 }
 

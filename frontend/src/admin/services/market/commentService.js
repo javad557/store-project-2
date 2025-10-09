@@ -22,6 +22,10 @@ export const getComment = async (id) => {
   return await axiosInstance.get(`/admin/market/comments/${id}`);
 };
 
+export const getNewComments = async () => {
+  return await axiosInstance.get(`/admin/market/comments/new_comments`);
+};
+
 export const changeCommentStatus = async (id, data) => {
   return await axiosInstance.patch(`/admin/market/comments/changeStatus/${id}`, data);
 };

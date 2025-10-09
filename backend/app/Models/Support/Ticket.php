@@ -77,4 +77,21 @@ public function hasUnseenDescendants()
     return $hasUnseen;
 }
 
+
+
+ public function getRootTicket()
+    {
+        $chekRoot = function ($ticket) use (&$chekRoot) {
+            if ($ticket->parent_id && $ticket->parent) {
+                return $chekRoot($ticket->parent);
+            }
+            return $ticket->exists ? $ticket : null;
+        };
+
+        return $chekRoot($this);
+    }
+
+
+
+
 }

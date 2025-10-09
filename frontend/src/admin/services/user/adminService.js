@@ -9,6 +9,10 @@ export const getAdmin = async (id) => {
   return await axiosInstance.get(`/admin/users/adminusers/${id}`);
 };
 
+export const getUser = async () => {
+  return await axiosInstance.get(`/admin/users/adminusers/get_user`);
+};
+
 export const addAdmin = async (data) => {
     const response = await axios.post(`/admin/users/adminusers`, data, {
         headers: {

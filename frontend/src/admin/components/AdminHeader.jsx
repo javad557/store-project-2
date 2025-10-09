@@ -1,17 +1,34 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // اضافه کردن useNavigate
-import { logout } from "../../auth/services/authService"; // اضافه کردن متد logout
-import { showSuccess, showError } from "../../utils/notifications"; // اضافه کردن نوتیفیکیشن‌ها
+import { Link, useNavigate } from "react-router-dom";
+import { logout } from "../../auth/services/authService";
+import { showSuccess, showError } from "../../utils/notifications";
 import logo from "/src/admin/assets/images/logo.png";
-import avatar from "/src/admin/assets/images/avatar-2.jpg";
+import { useQuery } from "@tanstack/react-query";
+import { getNewTickets } from "../services/ticketService";
+import { getNewComments } from "../services/market/commentService";
+import PropTypes from "prop-types";
 
-
-
-function AdminHeader({ toggleSidebar }) {
+function AdminHeader({ toggleSidebar, user, isUserLoading, userError, isUserError }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
+
+  const { data: newTickets = [], isError: isTicketError, error: ticketError, isLoading: isNewTicketLoading } = useQuery({
+    queryKey: ["newTickets"],
+    queryFn: async () => {
+      const response = await getNewTickets();
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+  });
+
+  const { data: newComments = [], isError: isCommentError, isSuccess: isCommentSuccess, error: commentError, isLoading: isNewCommentLoading } = useQuery({
+    queryKey: ["newComments"],
+    queryFn: async () => {
+      const response = await getNewComments();
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+  });
 
   const toggleNotifications = () => setShowNotifications(!showNotifications);
   const toggleComments = () => setShowComments(!showComments);
@@ -23,7 +40,7 @@ function AdminHeader({ toggleSidebar }) {
       localStorage.setItem("is_logging_out", "true");
       const response = await logout();
       console.log("Logout response:", response);
-      localStorage.removeItem("auth_token"); // تغییر از jwt_token به auth_token
+      localStorage.removeItem("auth_token");
       localStorage.removeItem("otp_token");
       localStorage.removeItem("identifier");
       localStorage.removeItem("fingerprint");
@@ -34,7 +51,7 @@ function AdminHeader({ toggleSidebar }) {
     } catch (error) {
       console.error("Logout error:", error);
       localStorage.setItem("is_logging_out", "true");
-      localStorage.removeItem("auth_token"); // تغییر از jwt_token به auth_token
+      localStorage.removeItem("auth_token");
       localStorage.removeItem("otp_token");
       localStorage.removeItem("identifier");
       localStorage.removeItem("fingerprint");
@@ -92,7 +109,13 @@ function AdminHeader({ toggleSidebar }) {
                 data-bs-toggle="dropdown"
               >
                 <i className="far fa-bell"></i>
-                <sup className="badge badge-danger">4</sup>
+                {isNewTicketLoading ? (
+                  ""
+                ) : (
+                  newTickets.length > 0 && (
+                    <sup className="badge badge-danger">{newTickets.length}</sup>
+                  )
+                )}
               </span>
               <ul
                 className={`dropdown-menu ${showNotifications ? "show" : ""}`}
@@ -100,26 +123,45 @@ function AdminHeader({ toggleSidebar }) {
               >
                 <li className="dropdown-item">
                   <section className="d-flex justify-content-between">
-                    <span className="px-2">نوتیفیکیشن‌ها</span>
                     <span className="px-2">
-                      <span className="badge badge-danger">جدید</span>
+                      {newTickets.length > 0 && (
+                        <span className="badge badge-danger">جدید</span>
+                      )}
                     </span>
                   </section>
                 </li>
-                <li className="dropdown-item">
-                  <section className="media">
-                    <img
-                      className="notification-img"
-                      src={avatar}
-                      alt="Avatar"
-                    />
-                    <section className="media-body pr-1">
-                      <h5 className="notification-user">محمد هاشمی</h5>
-                      <p className="notification-text">این یک متن تستی است</p>
-                      <p className="notification-time">30 دقیقه پیش</p>
-                    </section>
-                  </section>
-                </li>
+                {isTicketError ? (
+                  <li className="dropdown-item">
+                    <p className="text-danger">
+                      خطا در بارگذاری تیکت‌ها: {ticketError.message}
+                    </p>
+                  </li>
+                ) : newTickets.length > 0 ? (
+                  newTickets.map((newTicket, index) => (
+                    <li key={newTicket.id || index} className="dropdown-item">
+                      <section className="media">
+                        <Link
+                          to={`/admin/ticket/ticket/${newTicket.root_parent.id}`}
+                          className="ticket-link"
+                        >
+                          <section>
+                            <h5 className="notification-text">
+                              {newTicket.user.full_name}
+                            </h5>
+                            <p className="notification-text">
+                              {newTicket.body.substring(0, 25)}
+                            </p>
+                            <hr />
+                          </section>
+                        </Link>
+                      </section>
+                    </li>
+                  ))
+                ) : (
+                  <li className="dropdown-item">
+                    <p>هیچ تیکت جدیدی وجود ندارد</p>
+                  </li>
+                )}
               </ul>
             </span>
             <span className="ml-2 ml-md-4 position-relative">
@@ -129,37 +171,44 @@ function AdminHeader({ toggleSidebar }) {
                 data-bs-toggle="dropdown"
               >
                 <i className="far fa-comment-alt">
-                  <sup className="badge badge-danger">3</sup>
+                  {newComments.length > 0 && (
+                    <sup className="badge badge-danger">{newComments.length}</sup>
+                  )}
                 </i>
               </span>
               <ul
                 className={`dropdown-menu ${showComments ? "show" : ""}`}
                 style={{ left: "auto", right: 0 }}
               >
-                <li className="dropdown-item">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm my-2 mx-2"
-                    placeholder="جستجو ..."
-                  />
-                </li>
-                <li className="dropdown-item">
-                  <section className="media">
-                    <img
-                      src={avatar}
-                      alt="Avatar"
-                      className="notification-img"
-                    />
-                    <section className="media-body pr-1">
-                      <section className="d-flex justify-content-between">
-                        <h5 className="comment-user">محمد هاشمی</h5>
-                        <span>
-                          <i className="fas fa-circle text-success comment-user-status"></i>
-                        </span>
+                {isCommentError ? (
+                  <li className="dropdown-item">
+                    <p className="text-danger">
+                      خطا در بارگذاری کامنت‌ها: {commentError.message}
+                    </p>
+                  </li>
+                ) : newComments.length > 0 ? (
+                  newComments.map((newComment, index) => (
+                    <li key={newComment.id || index} className="dropdown-item">
+                      <section className="media">
+                        <Link to={`/admin/market/comments`} className="ticket-link">
+                          <section>
+                            <h5 className="notification-text">
+                              {newComment.user.full_name}
+                            </h5>
+                            <p className="notification-text">
+                              {newComment.body.substring(0, 25)}
+                            </p>
+                            <hr />
+                          </section>
+                        </Link>
                       </section>
-                    </section>
-                  </section>
-                </li>
+                    </li>
+                  ))
+                ) : (
+                  <li className="dropdown-item">
+                    <p>هیچ کامنت جدیدی وجود ندارد</p>
+                  </li>
+                )}
               </ul>
             </span>
             <span className="ml-3 ml-md-5 position-relative">
@@ -168,9 +217,19 @@ function AdminHeader({ toggleSidebar }) {
                 onClick={toggleProfile}
                 data-bs-toggle="dropdown"
               >
-                <img className="header-avatar" src={avatar} alt="Avatar" />
-                <span className="header-username">کامران محمدی</span>
-                <i className="fas fa-angle-down"></i>
+                {isUserLoading ? (
+                  <span className="header-username">در حال دریافت اطلاعات</span>
+                ) : isUserError ? (
+                  <span className="header-username text-danger">
+                    خطا در دریافت اطلاعات کاربر
+                  </span>
+                ) : user ? (
+                  <span className="header-username">
+                    {user.data?.data?.full_name || "کاربر"} <i className="fas fa-user user-icon me-2"></i>
+                  </span>
+                ) : (
+                  <span className="header-username">کاربری یافت نشد</span>
+                )}
               </span>
               <ul
                 className={`dropdown-menu ${showProfile ? "show" : ""}`}
@@ -189,5 +248,13 @@ function AdminHeader({ toggleSidebar }) {
     </header>
   );
 }
+
+AdminHeader.propTypes = {
+  toggleSidebar: PropTypes.func.isRequired,
+  user: PropTypes.object,
+  isUserLoading: PropTypes.bool.isRequired,
+  userError: PropTypes.object,
+  isUserError: PropTypes.bool.isRequired,
+};
 
 export default AdminHeader;

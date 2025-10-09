@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Market\BrandRequest;
 use App\Models\Market\Brand;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BrandController extends Controller
 {
@@ -14,17 +15,18 @@ class BrandController extends Controller
      */
     public function index()
     {
-        try{
-             $brands = Brand::query()
-            ->select('id', 'name')
-            ->get();
-            return response()->json($brands);
-
-         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'خطایی در دریافت محصولات رخ داد',
-            ], 500);
-        }
+       try{
+        $brands = Brand::all();
+        return response()->json([
+            'data'=>$brands,
+        ],200);
+       }
+       catch(\Throwable $e){
+        Log::error($e->getMessage());
+        return response()->json([
+            'error'=>'دریافت برندهای مورد نظر با خطا مواجه شد',
+        ],500);
+       }
     }
 
     /**
@@ -32,9 +34,11 @@ class BrandController extends Controller
      */
    public function store(BrandRequest $request)
 {
+    Log::alert('test',['storetest'=>$request->name]);
     try {
-        $data = $request->only(['name']);
-        $brand = Brand::create($data);
+        $brand = Brand::create([
+            'name'=>$request->name,
+        ]);
         return response()->json([
             'message' => 'برند مورد نظر با موفقیت افزوده شد',
             'brand' => $brand // اضافه کردن داده‌های برند
@@ -64,14 +68,16 @@ class BrandController extends Controller
     public function update(BrandRequest $request, Brand $brand)
     {
         try{
-            $data=$request->only(['name']);
-            $brand->update($data);
+            $brand->update([
+                'name'=>$request->name,
+            ]);
             return response()->json([
             'message'=>'برند مورد نظر با موفقیت ویرایش شد',
             'brand' => $brand // اضافه کردن داده‌های برند
         ],200);
         }
         catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'error' => 'خطایی در ویرایش برند رخ داد',
             ], 500);
@@ -83,6 +89,7 @@ class BrandController extends Controller
      */
     public function destroy(Brand $brand)
     {
+        Log::info('test',['deletetest'=>'yes']);
         try{
             $brand->delete();
             return response()->json([
@@ -90,6 +97,7 @@ class BrandController extends Controller
         ]);
         }
         catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'error' => 'خطایی در حذف برند رخ داد',
             ], 500);

@@ -38,6 +38,22 @@ class CommentController extends Controller
     }
 
 
+       public function new_comments()
+    {
+        try {
+            $new_comments = Comment::with(['user'])->where('seen',0)->get();
+            return response()->json([
+                'data'=>$new_comments
+            ],200);
+        } catch (\Exception $e) {
+            Log::error('خطا در دریافت نظرات: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'خطایی در دریافت نظرات رخ داد',
+            ], 500);
+        }
+    }
+
+
     public function changeStatus(Request $request,Comment $comment){
     try {
          $request->validate([

@@ -28,25 +28,25 @@ function Products() {
   const navigate = useNavigate();
 
   useEffect(() => {
-   const fetchProducts = async () => {
-  try {
-    const response = await getProducts();
-    console.log("محصولات دریافت‌شده:", response.data);
-    // نگاشت marketable به is_available
-    const mappedProducts = Array.isArray(response.data)
-      ? response.data.map(product => ({
-          ...product,
-          is_available: product.marketable === 1 // تبدیل 0/1 به false/true
-        }))
-      : [];
-    setProducts(mappedProducts);
-  } catch (error) {
-    console.error("خطا در دریافت محصولات:", error);
-    setErrors((prev) => ({ ...prev, products: "سرویس محصولات در دسترس نیست" }));
-  } finally {
-    setLoading((prev) => ({ ...prev, products: false }));
-  }
-};
+    const fetchProducts = async () => {
+      try {
+        const response = await getProducts();
+        console.log("محصولات دریافت‌شده:", response.data);
+        // نگاشت marketable به is_available
+        const mappedProducts = Array.isArray(response.data)
+          ? response.data.map((product) => ({
+              ...product,
+              is_available: product.marketable === 1 // تبدیل 0/1 به false/true
+            }))
+          : [];
+        setProducts(mappedProducts);
+      } catch (error) {
+        console.error("خطا در دریافت محصولات:", error);
+        setErrors((prev) => ({ ...prev, products: "سرویس محصولات در دسترس نیست" }));
+      } finally {
+        setLoading((prev) => ({ ...prev, products: false }));
+      }
+    };
 
     const fetchCategories = async () => {
       try {
@@ -68,13 +68,15 @@ function Products() {
       try {
         const response = await getBrands();
         console.log("برندها:", response.data);
-        setBrands(Array.isArray(response.data) ? response.data : []);
-        if (!response.data.length) {
+        // بررسی کلید data در پاسخ API
+        const brandsData = Array.isArray(response.data.data) ? response.data.data : [];
+        setBrands(brandsData);
+        if (!brandsData.length) {
           showError("هیچ برندی دریافت نشد");
         }
       } catch (error) {
         console.error("خطا در دریافت برندها:", error);
-        setErrors((prev) => ({ ...prev, brands: "سرویس برندها در دسترس نیست" }));
+        setErrors((prev) => ({ ...prev, brands: error.response?.data?.error || "سرویس برندها در دسترس نیست" }));
       } finally {
         setLoading((prev) => ({ ...prev, brands: false }));
       }
@@ -138,49 +140,49 @@ function Products() {
 
   return (
     <section className="row" dir="rtl">
-       <style>
-    {`
-      .btn-group .btn {
-        transition: none;
-      }
-      .btn .badge {
-        display: none;
-        position: absolute;
-        top: 40px;
-        bottom: -50px;
-        right: 50%;
-        transform: translateX(50%);
-        background-color: #000;
-        color: #fff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        white-space: nowrap;
-        z-index: 10;
-      }
-      .btn:hover .badge {
-        display: block;
-        animation: fadeInOut 4s ease-in-out forwards;
-      }
-      @keyframes fadeInOut {
-        0% {
-          opacity: 0;
-          transform: translateX(50%) translateY(5px);
-        }
-        20% {
-          opacity: 1;
-          transform: translateX(50%) translateY(0);
-        }
-        80% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 0;
-          transform: translateX(50%) translateY(5px);
-        }
-      }
-    `}
-  </style>
+      <style>
+        {`
+          .btn-group .btn {
+            transition: none;
+          }
+          .btn .badge {
+            display: none;
+            position: absolute;
+            top: 40px;
+            bottom: -50px;
+            right: 50%;
+            transform: translateX(50%);
+            background-color: #000;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+          }
+          .btn:hover .badge {
+            display: block;
+            animation: fadeInOut 4s ease-in-out forwards;
+          }
+          @keyframes fadeInOut {
+            0% {
+              opacity: 0;
+              transform: translateX(50%) translateY(5px);
+            }
+            20% {
+              opacity: 1;
+              transform: translateX(50%) translateY(0);
+            }
+            80% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 0;
+              transform: translateX(50%) translateY(5px);
+            }
+          }
+        `}
+      </style>
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
@@ -266,7 +268,7 @@ function Products() {
                   setSelectedCategory("");
                   setSelectedBrand("");
                 }}
-                className="btn btn-primary btn-sm mx-2" // تغییر کلاس به btn-sm برای هماهنگی با دکمه "ایجاد کالای جدید"
+                className="btn btn-primary btn-sm mx-2"
               >
                 همه محصولات
               </button>
@@ -292,10 +294,10 @@ function Products() {
                     <td colSpan="7" className="text-center">
                       در حال بارگذاری محصولات...
                     </td>
-                  </tr >
+                  </tr>
                 ) : filteredProducts.length > 0 && !errors.products ? (
                   filteredProducts.map((product, index) => (
-                    <tr key={product.id} style={{ cursor:"pointer" }}>
+                    <tr key={product.id} style={{ cursor: "pointer" }}>
                       <th>{index + 1}</th>
                       <td>
                         <Link to={`/products/${product.id}`} className="text-primary">
@@ -332,7 +334,6 @@ function Products() {
                             <FaEdit />
                             <span className="badge bg-dark">ویرایش</span>
                           </Link>
-                         
                           <Link
                             to={`/admin/market/guarantees/${product.id}`}
                             className="btn btn-info btn-sm position-relative me-1"
@@ -352,7 +353,7 @@ function Products() {
                             className="btn btn-dark btn-sm position-relative me-1"
                           >
                             <FaBox />
-                            <span className="badge bg-dark">واریانت‌ها و انبارداری</span> {/* تغییر متن badge */}
+                            <span className="badge bg-dark">واریانت‌ها و انبارداری</span>
                           </Link>
                           <button
                             className="btn btn-danger btn-sm position-relative"

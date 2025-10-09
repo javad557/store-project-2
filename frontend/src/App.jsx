@@ -12,7 +12,6 @@ import AddCategory from "./admin/pages/market/categories/AddCategory";
 import EditCategory from "./admin/pages/market/categories/EditCategory";
 import Brands from "./admin/pages/market/brands/Brands";
 import AddBrand from "./admin/pages/market/brands/AddBrand";
-import EditBrand from "./admin/pages/market/brands/EditBrand";
 import Products from "./admin/pages/market/products/Products";
 import AddProduct from "./admin/pages/market/products/AddProduct";
 import EditProduct from "./admin/pages/market/products/EditProduct";
@@ -133,14 +132,6 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="add_brand">
                     <AddBrand />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="brands/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_brand">
-                    <EditBrand />
                   </ProtectedRoute>
                 }
               />
