@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCategories } from "../../../services/market/categoryService.js";
 import { getBrands } from "../../../services/market/brandService.js";
 import { getProduct, updateProduct } from "../../../services/market/productService.js";
@@ -15,6 +16,7 @@ import "react-multi-date-picker/styles/layouts/mobile.css";
 function EditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,8 +26,8 @@ function EditProduct() {
     image: null,
     marketable: "1",
     tags: "",
-    published_at: null, // برای DatePicker (DateObject یا null)
-    published_at_server: "", // برای ارسال به سرور
+    published_at: null, // برای DatePicker
+    published_at_server: "", // برای سرور
     weight: "",
     length: "",
     width: "",
@@ -33,130 +35,137 @@ function EditProduct() {
     description: "",
     meta: [{ key: "", value: "" }],
   });
-  const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [loading, setLoading] = useState({
-    product: true,
-    categories: true,
-    brands: true,
-  });
-  const [errors, setErrors] = useState({
-    product: null,
-    categories: null,
-    brands: null,
-    form: null,
-  });
   const [currentImage, setCurrentImage] = useState(null);
 
-  useEffect(() => {
-    console.log("شروع بارگذاری داده‌ها...");
-    const fetchProduct = async () => {
-      try {
-        const response = await getProduct(id);
-        console.log("داده‌های محصول دریافت‌شده:", response.data);
-        const product = response.data;
+  // دریافت محصول با useQuery
+  const {data: product,isLoading: isProductLoading,error: productError, isError :isProductError
+  } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      const response = await getProduct(id);
+      console.log("پاسخ getProduct:", response.data); // دیباگ
+      const productData = response.data.data || {};
+      // تبدیل تاریخ میلادی به شمسی
+      let publishedAt = null;
+      if (productData.published_at) {
+        try {
+          const date = new DateObject({
+            date: new Date(productData.published_at),
+            calendar: persian,
+            locale: persian_fa,
+          });
+          console.log("تاریخ تبدیل‌شده به شمسی:", date.format("YYYY/MM/DD"));
+          publishedAt = date;
+        } catch (error) {
+          console.error("خطا در تبدیل تاریخ:", error);
+          showError("خطا در تبدیل تاریخ محصول");
+        }
+      }
+      return {
+        ...productData,
+        category_id: String(productData.category_id || ""),
+        brand_id: String(productData.brand_id || ""),
+        marketable: String(productData.marketable ?? "1"),
+        published_at: publishedAt,
+        published_at_server: productData.published_at || "",
+        meta: Array.isArray(productData.meta) ? productData.meta : [{ key: "", value: "" }],
+      };
+    },
+   
+  });
 
-        // تبدیل تاریخ میلادی به شمسی
-        let publishedAt = null;
-        if (product.published_at) {
-          try {
-            // پارس تاریخ دیتابیس
-            const date = new DateObject({
-              date: new Date(product.published_at), // پارس تاریخ کامل
-              calendar: persian,
-              locale: persian_fa,
-            });
-            console.log("تاریخ تبدیل‌شده به شمسی:", date.format("YYYY/MM/DD"));
-            publishedAt = date;
-          } catch (error) {
-            console.error("خطا در تبدیل تاریخ:", error);
-            showError("خطا در تبدیل تاریخ محصول");
+
+    useEffect(()=>{
+          if(product){
+              console.log("داده‌های محصول برای فرم:", product); // دیباگ
+              setFormData({
+                name: product.name || "",
+                category_id: product.category_id || "",
+                brand_id: product.brand_id || "",
+                price: product.price || "",
+                marketable: product.marketable || "1",
+                tags: product.tags || "",
+                published_at: product.published_at || null,
+                weight: product.weight || "",
+                length: product.length || "",
+                width: product.width || "",
+                height: product.height || "",
+                description: product.description || "",
+                meta: product.meta || [{ key: "", value: "" }],
+          });
+            setCurrentImage(product.image || null);
           }
-        }
+      },[product])
+  
 
-        setFormData({
-          name: product.name || "",
-          category_id: String(product.category_id || ""),
-          brand_id: String(product.brand_id || ""),
-          price: product.price || "",
-          marketable: String(product.marketable ?? "1"),
-          tags: product.tags || "",
-          published_at: publishedAt, // برای DatePicker
-          published_at_server: product.published_at || "", // برای سرور
-          weight: product.weight || "",
-          length: product.length || "",
-          width: product.width || "",
-          height: product.height || "",
-          description: product.description || "",
-          meta: Array.isArray(product.meta) ? product.meta : [{ key: "", value: "" }],
-        });
-        setCurrentImage(product.image || null);
-      } catch (error) {
-        console.error("خطا در دریافت محصول:", error);
-        setErrors((prev) => ({ ...prev, product: "خطا در دریافت اطلاعات محصول" }));
-        showError("خطا در دریافت اطلاعات محصول");
-      } finally {
-        setLoading((prev) => ({ ...prev, product: false }));
-      }
-    };
 
-    const fetchCategories = async () => {
-      try {
-        const response = await getCategories();
-        console.log("دسته‌بندی‌ها دریافت‌شده:", response.data);
-        setCategories(Array.isArray(response.data) ? response.data : []);
-        if (!response.data.length) {
-          showError("هیچ دسته‌بندی‌ای دریافت نشد");
-        }
-      } catch (error) {
-        console.error("خطا در دریافت دسته‌بندی‌ها:", error);
-        setErrors((prev) => ({ ...prev, categories: "سرویس دسته‌بندی‌ها در دسترس نیست" }));
-      } finally {
-        setLoading((prev) => ({ ...prev, categories: false }));
-      }
-    };
+  // دریافت دسته‌بندی‌ها با useQuery
+  const {
+    data: categories = [],
+    isLoading: isCategoriesLoading,
+    error: categoriesError,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories();
+      console.log("پاسخ getCategories:", response.data); // دیباگ
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+    onError: () => {
+      showError("سرویس دسته‌بندی‌ها در دسترس نیست");
+    },
+  });
 
-    const fetchBrands = async () => {
-      try {
-        const response = await getBrands();
-        console.log("برندها دریافت‌شده:", response.data.data); // اصلاح دسترسی به data.data
-        setBrands(Array.isArray(response.data.data) ? response.data.data : []); // اصلاح دسترسی به data.data
-        if (!response.data.data.length) { // اصلاح شرط
-          showError("هیچ برندی دریافت نشد");
-        }
-      } catch (error) {
-        console.error("خطا در دریافت برندها:", error);
-        setErrors((prev) => ({ ...prev, brands: "سرویس برندها در دسترس نیست" }));
-      } finally {
-        setLoading((prev) => ({ ...prev, brands: false }));
-      }
-    };
+  // دریافت برندها با useQuery
+  const {
+    data: brands = [],
+    isLoading: isBrandsLoading,
+    error: brandsError,
+  } = useQuery({
+    queryKey: ["brands"],
+    queryFn: async () => {
+      const response = await getBrands();
+      console.log("پاسخ getBrands:", response.data); // دیباگ
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+    onError: () => {
+      showError("سرویس برندها در دسترس نیست");
+    },
+  });
 
-    fetchProduct();
-    fetchCategories();
-    fetchBrands();
-  }, [id]);
+  // به‌روزرسانی محصول با useMutation
+  const mutation = useMutation({
+    mutationFn: (data) => updateProduct(id, data),
+    onSuccess: (response) => {
+      showSuccess(response.data.message || "محصول با موفقیت به‌روزرسانی شد");
+      queryClient.invalidateQueries(["products"]);
+      navigate("/admin/market/products");
+    },
+    onError: (error) => {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "خطا در به‌روزرسانی محصول: مشکلی در سرور رخ داد";
+      showError(errorMessage);
+    },
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log(`تغییر ورودی: ${name} = ${value}`);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    console.log("فایل انتخاب‌شده:", e.target.files[0]);
     setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
   };
 
   const handleDateChange = (date) => {
-    console.log("تاریخ انتخاب‌شده:", date);
     if (date) {
-      const formattedDate = date.toDate().toISOString().split("T")[0]; // فرمت YYYY-MM-DD برای سرور
-      console.log("تاریخ فرمت‌شده برای سرور:", formattedDate);
+      const formattedDate = date.toDate().toISOString().split("T")[0];
       setFormData((prev) => ({
         ...prev,
-        published_at: date, // برای نمایش در DatePicker
-        published_at_server: formattedDate, // برای ارسال به سرور
+        published_at: date,
+        published_at_server: formattedDate,
       }));
     } else {
       setFormData((prev) => ({
@@ -168,14 +177,12 @@ function EditProduct() {
   };
 
   const handleMetaChange = (index, field, value) => {
-    console.log(`تغییر متا: index=${index}, field=${field}, value=${value}`);
     const newMeta = [...formData.meta];
     newMeta[index][field] = value;
     setFormData((prev) => ({ ...prev, meta: newMeta }));
   };
 
   const addMetaField = () => {
-    console.log("اضافه کردن فیلد متا");
     setFormData((prev) => ({
       ...prev,
       meta: [...prev.meta, { key: "", value: "" }],
@@ -183,7 +190,6 @@ function EditProduct() {
   };
 
   const removeMetaField = (index) => {
-    console.log(`حذف فیلد متا در ایندکس ${index}`);
     setFormData((prev) => ({
       ...prev,
       meta: prev.meta.filter((_, i) => i !== index),
@@ -192,9 +198,6 @@ function EditProduct() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors((prev) => ({ ...prev, form: null }));
-    console.log("داده‌های فرم برای ارسال:", formData);
-
     const data = new FormData();
     data.append("name", formData.name);
     data.append("category_id", formData.category_id);
@@ -212,49 +215,41 @@ function EditProduct() {
     data.append("meta", JSON.stringify(formData.meta));
     data.append("_method", "PUT");
 
-    try {
-      console.log("داده‌های ارسالی به سرور:", Object.fromEntries(data));
-      const response = await updateProduct(id, data);
-      showSuccess(response.data.message || "محصول با موفقیت به‌روزرسانی شد");
-      navigate("/admin/market/products");
-    } catch (error) {
-      console.error("خطا در به‌روزرسانی محصول:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "خطا در به‌روزرسانی محصول: مشکلی در سرور رخ داد";
-      setErrors((prev) => ({ ...prev, form: errorMessage }));
-      showError(errorMessage);
-    }
+    mutation.mutate(data);
   };
 
-  console.log("وضعیت فعلی:", { loading, errors, formData });
+  // استایل‌های inline
+  const styles = `
+    .rmdp-container {
+      width: 100%;
+    }
+    .rmdp-input {
+      width: 100%;
+      height: 38px;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      border-radius: 0.25rem;
+      border: 1px solid #ced4da;
+      background-color: #fff;
+      color: #495057;
+    }
+    .rmdp-input:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+  `;
+
+
+  if(isProductError){
+      console.error("خطا در دریافت محصول:", productError);
+      showError(productError.response?.data?.error || "خطا در دریافت اطلاعات محصول");
+  }
 
   return (
     <section className="row" dir="rtl">
-      <style>
-        {`
-          .rmdp-container {
-            width: 100%;
-          }
-          .rmdp-input {
-            width: 100%;
-            height: 38px;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            border-radius: 0.25rem;
-            border: 1px solid #ced4da;
-            background-color: #fff;
-            color: #495057;
-          }
-          .rmdp-input:focus {
-            border-color: #80bdff;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-          }
-        `}
-      </style>
+      <style>{styles}</style>
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
@@ -271,10 +266,16 @@ function EditProduct() {
           </section>
 
           <section>
-            {loading.product ? (
-              <div>در حال بارگذاری...</div>
-            ) : errors.product ? (
-              <div className="text-danger">{errors.product}</div>
+            {isProductLoading ? (
+              <div className="text-center my-4">
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">در حال بارگذاری...</span>
+                </div>
+              </div>
+            ) : productError ? (
+              <div className="alert alert-danger">
+                {productError.response?.data?.error || "خطا در دریافت اطلاعات محصول"}
+              </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <section className="row">
@@ -302,7 +303,7 @@ function EditProduct() {
                         className="form-control form-control-sm"
                         value={formData.category_id}
                         onChange={handleInputChange}
-                        disabled={loading.categories || errors.categories}
+                        disabled={isCategoriesLoading || categoriesError}
                         required
                       >
                         <option value="">انتخاب کنید</option>
@@ -314,7 +315,7 @@ function EditProduct() {
                           ))
                         ) : (
                           <option value="" disabled>
-                            {errors.categories ? "دسته‌بندی‌ها در دسترس نیست" : "دسته‌بندی‌ای یافت نشد"}
+                            {categoriesError ? "دسته‌بندی‌ها در دسترس نیست" : "دسته‌بندی‌ای یافت نشد"}
                           </option>
                         )}
                       </select>
@@ -330,7 +331,7 @@ function EditProduct() {
                         className="form-control form-control-sm"
                         value={formData.brand_id}
                         onChange={handleInputChange}
-                        disabled={loading.brands || errors.brands}
+                        disabled={isBrandsLoading || brandsError}
                       >
                         <option value="">ندارد</option>
                         {brands.length > 0 ? (
@@ -341,7 +342,7 @@ function EditProduct() {
                           ))
                         ) : (
                           <option value="" disabled>
-                            {errors.brands ? "برندها در دسترس نیست" : "برندی یافت نشد"}
+                            {brandsError ? "برندها در دسترس نیست" : "برندی یافت نشد"}
                           </option>
                         )}
                       </select>
@@ -372,7 +373,7 @@ function EditProduct() {
                         name="published_at"
                         calendar={persian}
                         locale={persian_fa}
-                        value={formData.published_at} // شیء DateObject
+                        value={formData.published_at}
                         onChange={handleDateChange}
                         className="rmdp-mobile"
                         inputClass="rmdp-input"
@@ -413,11 +414,15 @@ function EditProduct() {
                   </section>
 
                   <section className="col-12">
-                    <button type="submit" className="btn btn-primary btn-sm">
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-sm"
+                      disabled={mutation.isLoading}
+                    >
                       ثبت
                     </button>
-                    {errors.form && (
-                      <div className="text-danger mt-2">{errors.form}</div>
+                    {mutation.isError && (
+                      <div className="alert alert-danger mt-2">{mutation.error.message}</div>
                     )}
                   </section>
                 </section>

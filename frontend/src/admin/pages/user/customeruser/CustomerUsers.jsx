@@ -45,8 +45,9 @@ function CustomerUsers() {
         if (result.isConfirmed) {
             try {
                 const response = await deleteCustomer(id);
+                
                 setCustomers(customers.filter((customer) => customer.id !== id));
-                showSuccess(response.message);
+                showSuccess(response.data.message);
             } catch (error) {
                 showError(error.response?.data?.error || "حذف کاربر مشتری با خطا مواجه شد");
             }

@@ -55,16 +55,13 @@ const statusMutation = useMutation({
  
     
     const newStatus = currentStatus === 1 ? 0 : 1; // تغییر وضعیت (1 به 0 یا 0 به 1)
-    console.log(newStatus);
     statusMutation.mutate({ id, status: newStatus });
   };
 
   if (isError) {
     showError(error.response?.data?.error || "دریافت صفحات اطلاع‌رسانی با خطا مواجه شد");
   }
-  if (isSuccess) {
-    console.log("success");
-  }
+ 
 
   return (
     <section className="row">

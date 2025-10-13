@@ -17,10 +17,12 @@ class GuaranteeController extends Controller
     public function index(Product $product)
     {
         try{
-             $guarantees=$product->guarantees;
-             return response()->json($guarantees);
+             return response()->json([
+                'data'=>$product->guarantees,
+             ],200);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'error' => 'خطایی در دریافت گارانتی ها رخ داد',
             ], 500);

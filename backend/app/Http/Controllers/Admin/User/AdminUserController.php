@@ -60,7 +60,6 @@ class AdminUserController extends Controller
                 'last_name'=>$request->last_name,
                 'email'=>$request->email,
                 'mobile'=>$request->mobile,
-                'password'=>Hash::make($request->password),
                 'national_code'=>$request->national_code,
                 'birthdate'=>$request->birthdate,
                 'is_admin'=>1,
@@ -84,12 +83,13 @@ class AdminUserController extends Controller
      */
    public function show(User $adminuser)
 {
+    Log::info('test',['test'=>'yes']);
     try {
         // لود کردن کاربر به همراه پرمیشن‌ها و رول‌ها
         $user = User::with(['permissions', 'roles.permissions'])->findOrFail($adminuser->id);
 
         // جمع‌آوری اسم‌های پرمیشن‌های مستقیم
-        $directPermissions = $user->permissions->pluck('name')->toArray();
+        $directPermissions = $user->permissions->pluck('id')->toArray();
 
         // جمع‌آوری اسم‌های پرمیشن‌های رول‌ها
         $rolePermissions = $user->roles->flatMap(function ($role) {
@@ -122,25 +122,38 @@ class AdminUserController extends Controller
 }
 
 
-public function get_user(){
-    try{
-        if( Auth::guard('api')->check()){
-        $user = Auth::guard('api')->user();
-        $userInformations = User::with(['permissions', 'roles.permissions'])->findOrFail($user->id);
-    }
-    return response()->json([
-        'data'=>$userInformations,
-    ],200);
+// app/Http/Controllers/YourController.php
+public function get_user()
+{
+    try {
+        if (Auth::guard('api')->check()) {
+            $user = Auth::guard('api')->user();
+            $userInformations = User::with(['permissions', 'roles.permissions'])->findOrFail($user->id);
 
-    }
-    catch(\Throwable $e){
+            // جمع‌آوری پرمیشن‌های مستقیم
+            $directPermissions = $userInformations->permissions->pluck('name')->toArray();
+            // جمع‌آوری پرمیشن‌های رول‌ها
+            $rolePermissions = $userInformations->roles->pluck('permissions')->flatten()->pluck('name')->toArray();
+            // ترکیب پرمیشن‌ها و حذف موارد تکراری
+            $allPermissions = array_unique(array_merge($directPermissions, $rolePermissions));
+
+            // اضافه کردن all_permissions به شیء کاربر
+            $userInformations->all_permissions = $allPermissions;
+
+            return response()->json([
+                'data' => $userInformations,
+            ], 200);
+        }
+        return response()->json([
+            'error' => 'کاربر احراز هویت نشده است',
+        ], 401);
+    } catch (\Throwable $e) {
         Log::error($e->getMessage());
         return response()->json([
-            'error'=>'دریافت کاربر مورد نظر با خطا مواجه شد',
-        ],500);
+            'error' => 'دریافت کاربر مورد نظر با خطا مواجه شد',
+        ], 500);
     }
 }
-
 
     /**
      * Update the specified resource in storage.

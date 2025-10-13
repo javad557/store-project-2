@@ -1,4 +1,4 @@
-
+// src/components/LoginRegister.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
@@ -7,73 +7,96 @@ import { sendOtp } from "../services/authService";
 import { getSettings } from "../../admin/services/settingsService";
 import { showSuccess, showError } from "../../utils/notifications";
 import logo from "../assets/images/logo.png";
-import "../styles/LoginRegister.css";function LoginRegisterInner() {
+import "../styles/LoginRegister.css";
+
+function LoginRegisterInner() {
   const [identifier, setIdentifier] = useState("");
   const [fingerprint, setFingerprint] = useState("");
   const [description, setDescription] = useState("");
   const navigate = useNavigate();
-  const { executeRecaptcha } = useGoogleReCaptcha();  // لود توضیحات از API
+  const { executeRecaptcha } = useGoogleReCaptcha();
+
+  // پاک کردن توکن‌ها و مقادیر مرتبط از localStorage هنگام لود صفحه
+  useEffect(() => {
+    const clearLocalStorage = () => {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("otp_token");
+      localStorage.removeItem("identifier");
+      localStorage.removeItem("fingerprint");
+        localStorage.removeItem("is_admin");
+        localStorage.removeItem("is_logging_out");
+        
+    };
+    clearLocalStorage();
+  }, []);
+
+  // لود توضیحات از API
   useEffect(() => {
     const fetchDescription = async () => {
       try {
         const response = await getSettings();
-        
         setDescription(response.data.login_page_description || "شماره موبایل یا پست الکترونیک خود را وارد کنید");
       } catch (error) {
-     
         setDescription("شماره موبایل یا پست الکترونیک خود را وارد کنید");
       }
     };
     fetchDescription();
-  }, []);  // تولید Fingerprint
+  }, []);
+
+  // تولید Fingerprint
   useEffect(() => {
     const initializeFingerprint = async () => {
       try {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
         setFingerprint(result.visitorId);
-      
       } catch (error) {
-        
+        console.error("Error generating fingerprint:", error);
       }
     };
     initializeFingerprint();
-  }, []);  const handleSendOtp = async (e) => {
-    e.preventDefault();// اعتبارسنجی اولیه identifier
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^09[0-9]{9}$/;
-if (!emailRegex.test(identifier) && !phoneRegex.test(identifier)) {
-  showError("لطفاً ایمیل یا شماره موبایل معتبر وارد کنید");
-  return;
-}
+  }, []);
 
-try {
-  if (!executeRecaptcha) {
-    throw new Error("reCAPTCHA not loaded");
-  }
-  const token = await executeRecaptcha("login");
- 
-  const response = await sendOtp({ identifier, recaptcha_token: token, fingerprint });
-  showSuccess(response.data.message || "کد OTP ارسال شد");
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
 
-  // ذخیره اطلاعات در localStorage برای مدیریت رفرش صفحه
-  localStorage.setItem("otp_token", response.data.otp_token);
-  localStorage.setItem("identifier", identifier);
-  localStorage.setItem("fingerprint", fingerprint);
+    // اعتبارسنجی اولیه identifier
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^09[0-9]{9}$/;
+    if (!emailRegex.test(identifier) && !phoneRegex.test(identifier)) {
+      showError("لطفاً ایمیل یا شماره موبایل معتبر وارد کنید");
+      return;
+    }
 
-  // هدایت به صفحه OtpVerify یا TwoFactorVerify
-  navigate("/auth/otpverify", {
-    state: {
-      otp_token: response.data.otp_token,
-      identifier,
-      fingerprint,
-      expires_at: response.data.expires_at,
-    },
-  });
-} catch (error) {
-  showError(error.response?.data?.error || "خطا در ارسال درخواست");
-  console.error("Error:", error);
-}  };  return (
+    try {
+      if (!executeRecaptcha) {
+        throw new Error("reCAPTCHA not loaded");
+      }
+      const token = await executeRecaptcha("login");
+      const response = await sendOtp({ identifier, recaptcha_token: token, fingerprint });
+      showSuccess(response.data.message || "کد OTP ارسال شد");
+
+      // ذخیره اطلاعات در localStorage برای مدیریت رفرش صفحه
+      localStorage.setItem("otp_token", response.data.otp_token);
+      localStorage.setItem("identifier", identifier);
+      localStorage.setItem("fingerprint", fingerprint);
+
+      // هدایت به صفحه OtpVerify یا TwoFactorVerify
+      navigate("/auth/otpverify", {
+        state: {
+          otp_token: response.data.otp_token,
+          identifier,
+          fingerprint,
+          expires_at: response.data.expires_at,
+        },
+      });
+    } catch (error) {
+      showError(error.response?.data?.error || "خطا در ارسال درخواست");
+      console.error("Error:", error);
+    }
+  };
+
+  return (
     <section className="vh-100 d-flex justify-content-center align-items-center pb-5">
       <form onSubmit={handleSendOtp}>
         <section className="login-wrapper mb-5">
@@ -117,12 +140,14 @@ try {
       </form>
     </section>
   );
-}// Wrap the component with GoogleReCaptchaProvider
+}
+
 function LoginRegister() {
-  const siteKey = "6LcyyKYrAAAAAKbGqimAWtMS-n0FDJL6TWyXN_tB";  return (
+  const siteKey = "6LcyyKYrAAAAAKbGqimAWtMS-n0FDJL6TWyXN_tB";
+  return (
     <GoogleReCaptchaProvider
       reCaptchaKey={siteKey}
-      useRecaptchaNet={true} // استفاده از دامنه recaptcha.net برای دور زدن مشکلات فایروال
+      useRecaptchaNet={true}
       scriptProps={{
         async: true,
         defer: true,
@@ -130,12 +155,13 @@ function LoginRegister() {
       }}
       container={{
         parameters: {
-          badge: "none", // مخفی کردن بج reCAPTCHA
+          badge: "none",
         },
       }}
     >
       <LoginRegisterInner />
     </GoogleReCaptchaProvider>
   );
-}export default LoginRegister;
+}
 
+export default LoginRegister;

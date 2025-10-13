@@ -31,11 +31,5 @@ class BannerRequest extends FormRequest
             'position'=>['required','integer']
         ];
     }
- 
-      protected function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(response()->json([
-            'error' => $validator->errors()->first(),
-        ], 422));
-    }
+
 }

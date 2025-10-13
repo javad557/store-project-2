@@ -349,44 +349,6 @@ function AddAdminUser() {
 
                                 <section className="col-12 col-md-6">
                                     <div className="form-group">
-                                        <label htmlFor="password">کلمه عبور</label>
-                                        <input
-                                            type="password"
-                                            className={`form-control form-control-sm ${errors.password.length > 0 ? "is-invalid" : ""}`}
-                                            name="password"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                        />
-                                        {errors.password.length > 0 && (
-                                            <div className="invalid-feedback">
-                                                <ul className="mb-0">
-                                                    {errors.password.map((error, index) => (
-                                                        <li key={index}>{error}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
-
-                                <section className="col-12 col-md-6">
-                                    <div className="form-group">
-                                        <label htmlFor="confirm_password">تکرار کلمه عبور</label>
-                                        <input
-                                            type="password"
-                                            className={`form-control form-control-sm ${errors.confirm_password ? "is-invalid" : ""}`}
-                                            name="confirm_password"
-                                            value={formData.confirm_password}
-                                            onChange={handleChange}
-                                        />
-                                        {errors.confirm_password && (
-                                            <div className="invalid-feedback">{errors.confirm_password}</div>
-                                        )}
-                                    </div>
-                                </section>
-
-                                <section className="col-12 col-md-6">
-                                    <div className="form-group">
                                         <label htmlFor="permissions">Permission‌ها</label>
                                         <Select
                                             isMulti

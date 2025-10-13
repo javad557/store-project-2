@@ -1,77 +1,115 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addGuarantee } from "../../../services/market/guaranteeService.js";
 import { getProduct } from "../../../services/market/productService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-// اضافه کردن استایل‌های سفارشی
-const styles = {
-  error: {
-    color: 'red',
-    fontSize: '0.875rem',
-    marginTop: '0.25rem',
-    marginBottom: '0',
-  },
-};
-
 function AddGuarantee() {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: "",
     duration: "",
     price_increase: "",
   });
-  const [product, setProduct] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState({
-    form: false,
-    product: true,
+  const [errors, setErrors] = useState({
+    name: null,
+    duration: null,
+    price_increase: null,
   });
-  const navigate = useNavigate();
-  const { productId } = useParams();
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await getProduct(productId);
-        console.log("محصول دریافت‌شده:", response.data);
-        setProduct(response.data);
-      } catch (error) {
-        console.error("خطا در دریافت محصول:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-        showError("خطا در دریافت اطلاعات محصول");
-      } finally {
-        setLoading((prev) => ({ ...prev, product: false }));
-      }
+  // تابع اعتبارسنجی جداگانه
+  const validateForm = (data) => {
+    const newErrors = {
+      name: null,
+      duration: null,
+      price_increase: null,
     };
-
-    fetchProduct();
-  }, [productId]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "نام گارانتی الزامی است";
-    if (formData.duration === "" || isNaN(formData.duration) || Number(formData.duration) <= 0)
+    if (!data.name.trim()) newErrors.name = "نام گارانتی الزامی است";
+    else if (data.name.trim().length < 3) newErrors.name = "نام گارانتی باید حداقل 3 کاراکتر باشد";
+    if (data.duration === "" || isNaN(data.duration) || Number(data.duration) <= 0)
       newErrors.duration = "مدت گارانتی باید عدد مثبت باشد";
-    if (formData.price_increase === "" || isNaN(formData.price_increase) || Number(formData.price_increase) <= 0)
+    if (data.price_increase === "" || isNaN(data.price_increase) || Number(data.price_increase) <= 0)
       newErrors.price_increase = "افزایش قیمت باید عدد مثبت باشد";
     return newErrors;
   };
 
+  // اجرای اعتبارسنجی هر وقت formData تغییر کرد
+  useEffect(() => {
+    const validationErrors = validateForm(formData);
+    setErrors(validationErrors);
+    console.log("خطاهای اعتبارسنجی:", validationErrors); // دیباگ
+  }, [formData]);
+
+  // بررسی معتبر بودن فرم برای فعال‌سازی دکمه
+  const isFormValid = () =>
+    formData.name.trim().length >= 3 &&
+    !isNaN(formData.duration) && Number(formData.duration) > 0 &&
+    !isNaN(formData.price_increase) && Number(formData.price_increase) > 0;
+
+  // دریافت محصول با useQuery
+  const {
+    data: product,
+    isLoading: isProductLoading,
+    error: productError,
+  } = useQuery({
+    queryKey: ["product", productId],
+    queryFn: async () => {
+      const response = await getProduct(productId);
+      console.log("پاسخ getProduct:", response.data); // دیباگ
+      return response.data.data || {};
+    },
+    onError: (error) => {
+      console.error("خطا در دریافت محصول:", error);
+      showError(error.response?.data?.error || "خطا در دریافت اطلاعات محصول");
+    },
+  });
+
+  // افزودن گارانتی با useMutation
+  const mutation = useMutation({
+    mutationFn: (payload) => addGuarantee(productId, payload),
+    onSuccess: (response) => {
+      showSuccess(response.data.message || "گارانتی با موفقیت اضافه شد");
+      queryClient.invalidateQueries(["guarantees", productId]);
+      navigate(`/admin/market/guarantees/${productId}`);
+    },
+    onError: (error) => {
+      console.error("خطا در افزودن گارانتی:", error);
+      if (error.response?.status === 422) {
+        showError("فیلدها نامعتبر هستند");
+        const validationErrors = error.response.data.errors || {};
+        setErrors(
+          Object.keys(validationErrors).reduce(
+            (acc, key) => ({
+              ...acc,
+              [key]: Array.isArray(validationErrors[key])
+                ? validationErrors[key][0]
+                : validationErrors[key],
+            }),
+            { name: null, duration: null, price_increase: null }
+          )
+        );
+      } else {
+        showError(error.response?.data?.error || "افزودن گارانتی با خطا مواجه شد");
+      }
+    },
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    console.log(`تغییر ورودی: ${name} = ${value}`); // دیباگ
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
+    const validationErrors = validateForm(formData);
+    if (Object.values(validationErrors).some((error) => error)) {
       setErrors(validationErrors);
+      showError("لطفاً خطاهای فرم را برطرف کنید");
       return;
     }
 
@@ -80,28 +118,8 @@ function AddGuarantee() {
       duration: formData.duration,
       price_increase: formData.price_increase,
     };
-    console.log('داده‌های خام فرم:', formData);
-    console.log('داده‌های ارسالی به API:', payload);
-
-    setLoading((prev) => ({ ...prev, form: true }));
-    try {
-      await addGuarantee(productId, payload);
-      showSuccess("گارانتی با موفقیت اضافه شد");
-      navigate(`/admin/market/guarantees/${productId}`);
-    } catch (error) {
-      console.error("خطا در افزودن گارانتی:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      if (error.response?.status === 422) {
-        showError(error.response.data.error || "داده‌های ارسالی نامعتبر است");
-      } else {
-        showError("افزودن گارانتی با خطا مواجه شد");
-      }
-    } finally {
-      setLoading((prev) => ({ ...prev, form: false }));
-    }
+    console.log("داده‌های ارسالی به API:", payload); // دیباگ
+    mutation.mutate(payload);
   };
 
   return (
@@ -110,7 +128,7 @@ function AddGuarantee() {
         <section className="main-body-container">
           <section className="main-body-container-header">
             <h5>
-              افزودن گارانتی برای محصول: {loading.product ? "در حال بارگذاری..." : product?.name || "محصول"}
+              افزودن گارانتی برای محصول: {isProductLoading ? "در حال بارگذاری..." : product?.name || "محصول"}
             </h5>
           </section>
 
@@ -123,63 +141,74 @@ function AddGuarantee() {
           </section>
 
           <section>
-            <form onSubmit={handleSubmit}>
-              <section className="row">
-                <section className="col-12 col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="name">نام گارانتی</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={`form-control form-control-sm ${errors.name ? "is-invalid" : ""}`}
-                    />
-                    {errors.name && <div style={styles.error}>{errors.name}</div>}
-                  </div>
-                </section>
+            {productError ? (
+              <div className="alert alert-danger">
+                {productError.response?.data?.error || "خطا در دریافت اطلاعات محصول"}
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <section className="row">
+                  <section className="col-12 col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="name">نام گارانتی</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className={`form-control form-control-sm ${errors.name ? "is-invalid" : ""}`}
+                      />
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                    </div>
+                  </section>
 
-                <section className="col-12 col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="duration">مدت گارانتی (ماه)</label>
-                    <input
-                      type="number"
-                      name="duration"
-                      value={formData.duration}
-                      onChange={handleChange}
-                      className={`form-control form-control-sm ${errors.duration ? "is-invalid" : ""}`}
-                      min="1"
-                    />
-                    {errors.duration && <div style={styles.error}>{errors.duration}</div>}
-                  </div>
-                </section>
+                  <section className="col-12 col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="duration">مدت گارانتی (ماه)</label>
+                      <input
+                        type="number"
+                        name="duration"
+                        value={formData.duration}
+                        onChange={handleChange}
+                        className={`form-control form-control-sm ${errors.duration ? "is-invalid" : ""}`}
+                        min="1"
+                      />
+                      {errors.duration && <div className="invalid-feedback">{errors.duration}</div>}
+                    </div>
+                  </section>
 
-                <section className="col-12 col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="price_increase">افزایش قیمت</label>
-                    <input
-                      type="number"
-                      name="price_increase"
-                      value={formData.price_increase}
-                      onChange={handleChange}
-                      className={`form-control form-control-sm ${errors.price_increase ? "is-invalid" : ""}`}
-                      min="0"
-                    />
-                    {errors.price_increase && <div style={styles.error}>{errors.price_increase}</div>}
-                  </div>
-                </section>
+                  <section className="col-12 col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="price_increase">افزایش قیمت</label>
+                      <input
+                        type="number"
+                        name="price_increase"
+                        value={formData.price_increase}
+                        onChange={handleChange}
+                        className={`form-control form-control-sm ${errors.price_increase ? "is-invalid" : ""}`}
+                        min="0"
+                      />
+                      {errors.price_increase && <div className="invalid-feedback">{errors.price_increase}</div>}
+                    </div>
+                  </section>
 
-                <section className="col-12">
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-sm"
-                    disabled={loading.form}
-                  >
-                    {loading.form ? "در حال ثبت..." : "ثبت"}
-                  </button>
+                  <section className="col-12">
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-sm"
+                      disabled={mutation.isPending || !isFormValid()}
+                    >
+                      {mutation.isPending ? "در حال ثبت..." : "ثبت"}
+                    </button>
+                    {mutation.isError && (
+                      <div className="alert alert-danger mt-2">
+                        {mutation.error.response?.data?.error || "افزودن گارانتی با خطا مواجه شد"}
+                      </div>
+                    )}
+                  </section>
                 </section>
-              </section>
-            </form>
+              </form>
+            )}
           </section>
         </section>
       </section>

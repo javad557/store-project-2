@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { verifyTwoFactor } from "../services/authService"; // مسیر سرویس رو درست کن
+import { useAuth } from "../../context/AuthContext"; // ایمپورت useAuth
+import { verifyTwoFactor } from "../services/authService";
 import { getSettings } from "../../admin/services/settingsService";
 import { showSuccess, showError } from "../../utils/notifications";
 import logo from "../assets/images/logo.png";
-import "../styles/OtpVerify.css"; // فرض می‌کنم استایل‌ها مشابه OtpVerify هستند
+import "../styles/OtpVerify.css";
 
 function TwoFactorVerify() {
   const [twoFactorCode, setTwoFactorCode] = useState("");
@@ -12,6 +13,7 @@ function TwoFactorVerify() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth(); // دریافت تابع login از AuthContext
 
   const { otp_token: otpToken, identifier, fingerprint } = location.state || {};
 
@@ -56,10 +58,15 @@ function TwoFactorVerify() {
       console.log("verifyTwoFactor response:", response.data);
       showSuccess(response.data.message);
 
-      // هدایت بر اساس is_admin
-      localStorage.setItem("auth_token", response.data.auth_token);
-      localStorage.setItem("is_admin", response.data.is_admin);
-      navigate(response.data.is_admin ? "/admin/dashboard" : "/dashboard");
+      if (response.data.auth_token) {
+        // فراخوانی تابع login از AuthContext
+        const redirectPath = response.data.is_admin ? "/admin/dashboard" : "/dashboard";
+        await login(response.data.auth_token, redirectPath);
+      } else {
+        // در صورت عدم وجود auth_token، به صفحه لاگین هدایت شود
+        showError("خطا در تأیید ورود");
+        navigate("/auth/loginregister");
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.error || "خطا در تأیید کد دو عاملی";
       const status = error.response?.status;

@@ -342,7 +342,7 @@ function App() {
               <Route
                 path="adminusers/add"
                 element={
-                  <ProtectedRoute requiredPermission="add_adminuser">
+                  <ProtectedRoute requiredPermission="edit_adminuser">
                     <AddAdminUser />
                   </ProtectedRoute>
                 }

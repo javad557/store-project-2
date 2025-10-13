@@ -15,38 +15,39 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-   public function index(): JsonResponse
-    {
-        try {
-            $products = Product::query()
-                ->select('id', 'name', 'category_id', 'brand_id', 'price', 'marketable')
-                ->with(['gallery' => function ($query) {
-                    $query->where('is_main', 1)->select('product_id', 'image');
-                }])
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'category_id' => $product->category_id,
-                        'brand_id' => $product->brand_id,
-                        'price' => $product->price,
-                        'marketable' => $product->marketable,
-                        'main_image' => $product->gallery->isNotEmpty() ? $product->gallery->first()->image : null,
-                    ];
-                });
+  public function index(): JsonResponse
+{
+    try {
+        $products = Product::query()
+            ->select('id', 'name', 'category_id', 'brand_id', 'price', 'marketable')
+            ->with(['gallery' => function ($query) {
+                $query->where('is_main', 1)->select('product_id', 'image');
+            }])
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'category_id' => $product->category_id,
+                    'brand_id' => $product->brand_id,
+                    'price' => $product->price,
+                    'marketable' => $product->marketable,
+                    'main_image' => $product->gallery->isNotEmpty() ? $product->gallery->first()->image : null,
+                ];
+            });
 
-            Log::info('محصولات', ['محصولات' => $products->toArray()]);
+        // Log::info('محصولات', ['محصولات' => $products->toArray()]);
 
-            return response()->json($products, 200);
-        } catch (\Exception $e) {
-            Log::error('خطا در دریافت محصولات', ['error' => $e->getMessage()]);
-            return response()->json([
-                'error' => 'خطایی در دریافت محصولات رخ داد: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'data' => $products
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('خطا در دریافت محصولات', ['error' => $e->getMessage()]);
+        return response()->json([
+            'error' => 'خطایی در دریافت محصولات رخ داد: ' . $e->getMessage(),
+        ], 500);
     }
-
+}
     /**
      * Store a newly created resource in storage.
      */
@@ -80,8 +81,11 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        Log::info('test',['showtest'=>'yes']);
         try{
-            return response()->json($product);
+            return response()->json([
+                'data'=>$product
+            ],200);
            
          } catch (\Exception $e) {
             return response()->json([

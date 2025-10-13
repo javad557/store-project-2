@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   getCategories,
@@ -11,49 +11,48 @@ import {
 } from "../../../../utils/notifications.jsx";
 
 function Categories() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setLoading(true);
-      try {
-        const response = await getCategories();
-        console.log("Response from getCategories:", response.data); // برای دیباگ
-        const rawCategories = Array.isArray(response.data) ? response.data : [];
-        const categoriesWithParentName = rawCategories.map((category) => ({
-          ...category,
-          parent_name: category.parent_id
-            ? rawCategories.find((parent) => parent.id === category.parent_id)?.name || "-"
-            : null,
-        }));
-        setCategories(categoriesWithParentName);
-      } catch (error) {
-        console.log("Error in fetchCategories:", error.response); // برای دیباگ
-        setCategories([]);
-        // بررسی فیلد error به جای message
-        const errorMessage = error.response?.data?.error || "دریافت دسته‌بندی‌ها با خطا مواجه شد";
-        showError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
+  // دریافت دسته‌بندی‌ها با useQuery
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories();
+      const rawCategories = Array.isArray(response.data.data) ? response.data.data : [];
+      return rawCategories.map((category) => ({
+        ...category,
+        parent_name: category.parent_id
+          ? rawCategories.find((parent) => parent.id === category.parent_id)?.name || "-"
+          : null,
+      }));
+    },
+    onError: (error) => {
+      console.log("Error in fetchCategories:", error.response); // برای دیباگ
+      const errorMessage = error.response?.data?.error || "دریافت دسته‌بندی‌ها با خطا مواجه شد";
+      showError(errorMessage);
+    },
+  });
+
+  // حذف دسته‌بندی با useMutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: (response, id) => {
+      queryClient.setQueryData(["categories"], (old) =>
+        old.filter((category) => category.id !== id)
+      );
+      showSuccess(response.data.message);
+    },
+    onError: (error) => {
+      console.log("Error in deleteCategory:", error.response); // برای دیباگ
+      const errorMessage = error.response?.data?.error || "حذف دسته‌بندی با خطا مواجه شد";
+      showError(errorMessage);
+    },
+  });
 
   const handleDelete = async (id, name) => {
     const isConfirmed = await confirmDelete(name);
     if (isConfirmed) {
-      try {
-        const response = await deleteCategory(id);
-        setCategories(categories.filter((category) => category.id !== id));
-        showSuccess(response.data.message);
-      } catch (error) {
-        console.log("Error in deleteCategory:", error.response); // برای دیباگ
-        // بررسی فیلد error به جای message
-        const errorMessage = error.response?.data?.error || "حذف دسته‌بندی با خطا مواجه شد";
-        showError(errorMessage);
-      }
+      deleteMutation.mutate(id);
     }
   };
 
@@ -70,7 +69,7 @@ function Categories() {
             </Link>
           </section>
           <section className="table-responsive">
-            {loading ? (
+            {isLoading ? (
               <div>در حال بارگذاری...</div>
             ) : (
               <table className="table table-striped table-hover">
@@ -104,6 +103,7 @@ function Categories() {
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => handleDelete(category.id, category.name)}
+                            disabled={deleteMutation.isLoading}
                           >
                             حذف
                             <i className="fa fa-trash"></i>

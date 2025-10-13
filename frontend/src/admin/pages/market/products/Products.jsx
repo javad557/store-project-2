@@ -1,92 +1,113 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { getProducts, deleteProduct, toggleProductAvailability } from "../../../services/market/productService.js";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getProducts,
+  deleteProduct,
+  toggleProductAvailability,
+} from "../../../services/market/productService.js";
 import { getCategories } from "../../../services/market/categoryService.js";
 import { getBrands } from "../../../services/market/brandService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
-import { FaEdit, FaTrashAlt, FaPalette, FaShieldAlt, FaImages, FaBox } from "react-icons/fa";
+import { FaEdit, FaTrashAlt, FaShieldAlt, FaImages, FaBox } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Swal from "sweetalert2";
 
 function Products() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
-  const [loading, setLoading] = useState({
-    products: true,
-    categories: true,
-    brands: true,
+
+  // دریافت محصولات با useQuery
+  const {
+    data: products = [],
+    isLoading: isProductsLoading,
+    error: productsError,
+  } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const response = await getProducts();
+      const mappedProducts = Array.isArray(response.data.data)
+        ? response.data.data.map((product) => ({
+            ...product,
+            is_available: product.marketable === 1, // تبدیل marketable به is_available
+          }))
+        : [];
+      return mappedProducts;
+    },
+    onError: () => {
+      showError("سرویس محصولات در دسترس نیست");
+    },
   });
-  const [errors, setErrors] = useState({
-    products: null,
-    categories: null,
-    brands: null,
+
+  // دریافت دسته‌بندی‌ها با useQuery
+  const {
+    data: categories = [],
+    isLoading: isCategoriesLoading,
+    error: categoriesError,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories();
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+    onError: () => {
+      showError("سرویس دسته‌بندی‌ها در دسترس نیست");
+    },
   });
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await getProducts();
-        console.log("محصولات دریافت‌شده:", response.data);
-        // نگاشت marketable به is_available
-        const mappedProducts = Array.isArray(response.data)
-          ? response.data.map((product) => ({
-              ...product,
-              is_available: product.marketable === 1 // تبدیل 0/1 به false/true
-            }))
-          : [];
-        setProducts(mappedProducts);
-      } catch (error) {
-        console.error("خطا در دریافت محصولات:", error);
-        setErrors((prev) => ({ ...prev, products: "سرویس محصولات در دسترس نیست" }));
-      } finally {
-        setLoading((prev) => ({ ...prev, products: false }));
+  // دریافت برندها با useQuery
+  const {
+    data: brands = [],
+    isLoading: isBrandsLoading,
+    error: brandsError,
+  } = useQuery({
+    queryKey: ["brands"],
+    queryFn: async () => {
+      const response = await getBrands();
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    },
+    onError: () => {
+      showError("سرویس برندها در دسترس نیست");
+    },
+  });
+
+  // حذف محصول با useMutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: (response, id) => {
+      if (response.data.hasActiveOrders) {
+        showError("برای محصول مورد نظر سفارش فعال وجود دارد");
+      } else {
+        queryClient.setQueryData(["products"], (old) =>
+          old.filter((product) => product.id !== id)
+        );
+        showSuccess("محصول با موفقیت حذف شد");
       }
-    };
+    },
+    onError: () => {
+      showError("حذف محصول با خطا مواجه شد");
+    },
+  });
 
-    const fetchCategories = async () => {
-      try {
-        const response = await getCategories();
-        console.log("دسته‌بندی‌ها:", response.data);
-        setCategories(Array.isArray(response.data) ? response.data : []);
-        if (!response.data.length) {
-          showError("هیچ دسته‌بندی‌ای دریافت نشد");
-        }
-      } catch (error) {
-        console.error("خطا در دریافت دسته‌بندی‌ها:", error);
-        setErrors((prev) => ({ ...prev, categories: "سرویس دسته‌بندی‌ها در دسترس نیست" }));
-      } finally {
-        setLoading((prev) => ({ ...prev, categories: false }));
-      }
-    };
+  // تغییر وضعیت موجودی با useMutation
+  const toggleAvailabilityMutation = useMutation({
+    mutationFn: ({ id, isAvailable }) => toggleProductAvailability(id, !isAvailable),
+    onSuccess: (response, { id, isAvailable }) => {
+      queryClient.setQueryData(["products"], (old) =>
+        old.map((product) =>
+          product.id === id ? { ...product, is_available: !isAvailable } : product
+        )
+      );
+      showSuccess(`محصول با موفقیت ${!isAvailable ? "قابل فروش" : "غیر قابل فروش"} شد`);
+    },
+    onError: () => {
+      showError("تغییر وضعیت محصول با خطا مواجه شد");
+    },
+  });
 
-    const fetchBrands = async () => {
-      try {
-        const response = await getBrands();
-        console.log("برندها:", response.data);
-        // بررسی کلید data در پاسخ API
-        const brandsData = Array.isArray(response.data.data) ? response.data.data : [];
-        setBrands(brandsData);
-        if (!brandsData.length) {
-          showError("هیچ برندی دریافت نشد");
-        }
-      } catch (error) {
-        console.error("خطا در دریافت برندها:", error);
-        setErrors((prev) => ({ ...prev, brands: error.response?.data?.error || "سرویس برندها در دسترس نیست" }));
-      } finally {
-        setLoading((prev) => ({ ...prev, brands: false }));
-      }
-    };
-
-    fetchProducts();
-    fetchCategories();
-    fetchBrands();
-  }, []);
-
+  // تابع تأیید حذف با SweetAlert2
   const handleDelete = async (id, name) => {
     const result = await Swal.fire({
       title: `آیا از حذف "${name}" مطمئن هستید؟`,
@@ -101,106 +122,110 @@ function Products() {
     });
 
     if (result.isConfirmed) {
-      try {
-        const response = await deleteProduct(id);
-        if (response.data.hasActiveOrders) {
-          showError("برای محصول مورد نظر سفارش فعال وجود دارد");
-        } else {
-          setProducts(products.filter((product) => product.id !== id));
-          showSuccess("محصول با موفقیت حذف شد");
-        }
-      } catch (error) {
-        showError("حذف محصول با خطا مواجه شد");
-      }
+      deleteMutation.mutate(id);
     }
   };
 
-  const handleToggleAvailability = async (id, isAvailable) => {
-    try {
-      await toggleProductAvailability(id, !isAvailable);
-      setProducts(
-        products.map((product) =>
-          product.id === id ? { ...product, is_available: !isAvailable } : product
-        )
-      );
-      showSuccess(`محصول با موفقیت ${!isAvailable ? "قابل فروش" : "غیر قابل فروش"} شد`);
-    } catch (error) {
-      showError("تغییر وضعیت محصول با خطا مواجه شد");
-    }
-  };
-
+  // فیلتر محصولات
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory
       ? String(product.category_id) === String(selectedCategory)
       : true;
-    const matchesBrand = selectedBrand ? String(product.brand_id) === String(selectedBrand) : true;
+    const matchesBrand = selectedBrand
+      ? String(product.brand_id) === String(selectedBrand)
+      : true;
     return matchesSearch && matchesCategory && matchesBrand;
   });
 
+  // استایل‌های inline
+  const styles = `
+    .btn-group .btn {
+      transition: none;
+    }
+    .btn .badge {
+      display: none;
+      position: absolute;
+      top: 40px;
+      bottom: -50px;
+      right: 50%;
+      transform: translateX(50%);
+      background-color: #000;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .btn:hover .badge {
+      display: block;
+      animation: fadeInOut 4s ease-in-out forwards;
+    }
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+        transform: translateX(50%) translateY(5px);
+      }
+      20% {
+        opacity: 1;
+        transform: translateX(50%) translateY(0);
+      }
+      80% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(50%) translateY(5px);
+      }
+    }
+    .max-height-2rem {
+      max-height: 2rem;
+    }
+    .max-width-16-rem {
+      max-width: 16rem;
+    }
+  `;
+
   return (
     <section className="row" dir="rtl">
-      <style>
-        {`
-          .btn-group .btn {
-            transition: none;
-          }
-          .btn .badge {
-            display: none;
-            position: absolute;
-            top: 40px;
-            bottom: -50px;
-            right: 50%;
-            transform: translateX(50%);
-            background-color: #000;
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 10;
-          }
-          .btn:hover .badge {
-            display: block;
-            animation: fadeInOut 4s ease-in-out forwards;
-          }
-          @keyframes fadeInOut {
-            0% {
-              opacity: 0;
-              transform: translateX(50%) translateY(5px);
-            }
-            20% {
-              opacity: 1;
-              transform: translateX(50%) translateY(0);
-            }
-            80% {
-              opacity: 1;
-            }
-            100% {
-              opacity: 0;
-              transform: translateX(50%) translateY(5px);
-            }
-          }
-        `}
-      </style>
+      <style>{styles}</style>
       <section className="col-12">
         <section className="main-body-container">
           <section className="main-body-container-header">
             <h5>کالاها</h5>
           </section>
 
-          {loading.products && loading.categories && loading.brands ? (
-            <div className="text-center my-4">در حال بارگذاری...</div>
-          ) : (
-            <>
-              {errors.categories && (
-                <div className="alert alert-danger text-center">{errors.categories}</div>
+          {(isProductsLoading && isCategoriesLoading && isBrandsLoading) ||
+          productsError ||
+          categoriesError ||
+          brandsError ? (
+            <div className="text-center my-4">
+              {isProductsLoading && isCategoriesLoading && isBrandsLoading ? (
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">در حال بارگذاری...</span>
+                </div>
+              ) : (
+                <>
+                  {productsError && (
+                    <div className="alert alert-danger text-center">
+                      سرویس محصولات در دسترس نیست
+                    </div>
+                  )}
+                  {categoriesError && (
+                    <div className="alert alert-danger text-center">
+                      سرویس دسته‌بندی‌ها در دسترس نیست
+                    </div>
+                  )}
+                  {brandsError && (
+                    <div className="alert alert-danger text-center">
+                      سرویس برندها در دسترس نیست
+                    </div>
+                  )}
+                </>
               )}
-              {errors.brands && (
-                <div className="alert alert-danger text-center">{errors.brands}</div>
-              )}
-            </>
-          )}
+            </div>
+          ) : null}
 
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
             <Link to="/admin/market/products/add" className="btn btn-success btn-sm">
@@ -218,13 +243,10 @@ function Products() {
               </div>
               <select
                 value={selectedCategory}
-                onChange={(e) => {
-                  console.log("دسته‌بندی انتخاب‌شده:", e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
+                onChange={(e) => setSelectedCategory(e.target.value)}
                 className="form-select form-select-sm mx-2"
                 style={{ maxWidth: "150px" }}
-                disabled={loading.categories || errors.categories}
+                disabled={isCategoriesLoading || categoriesError}
               >
                 <option value="">همه دسته‌بندی‌ها</option>
                 {categories.length > 0 ? (
@@ -235,19 +257,16 @@ function Products() {
                   ))
                 ) : (
                   <option value="" disabled>
-                    {errors.categories ? "دسته‌بندی‌ها در دسترس نیست" : "دسته‌بندی‌ای یافت نشد"}
+                    دسته‌بندی‌ای یافت نشد
                   </option>
                 )}
               </select>
               <select
                 value={selectedBrand}
-                onChange={(e) => {
-                  console.log("برند انتخاب‌شده:", e.target.value);
-                  setSelectedBrand(e.target.value);
-                }}
+                onChange={(e) => setSelectedBrand(e.target.value)}
                 className="form-select form-select-sm mx-2"
                 style={{ maxWidth: "150px" }}
-                disabled={loading.brands || errors.brands}
+                disabled={isBrandsLoading || brandsError}
               >
                 <option value="">همه برندها</option>
                 {brands.length > 0 ? (
@@ -258,7 +277,7 @@ function Products() {
                   ))
                 ) : (
                   <option value="" disabled>
-                    {errors.brands ? "برندها در دسترس نیست" : "برندی یافت نشد"}
+                    برندی یافت نشد
                   </option>
                 )}
               </select>
@@ -289,13 +308,13 @@ function Products() {
                 </tr>
               </thead>
               <tbody>
-                {loading.products ? (
+                {isProductsLoading ? (
                   <tr>
                     <td colSpan="7" className="text-center">
                       در حال بارگذاری محصولات...
                     </td>
                   </tr>
-                ) : filteredProducts.length > 0 && !errors.products ? (
+                ) : filteredProducts.length > 0 && !productsError ? (
                   filteredProducts.map((product, index) => (
                     <tr key={product.id} style={{ cursor: "pointer" }}>
                       <th>{index + 1}</th>
@@ -305,7 +324,8 @@ function Products() {
                         </Link>
                       </td>
                       <td>
-                        {categories.find((cat) => String(cat.id) === String(product.category_id))?.name || "-"}
+                        {categories.find((cat) => String(cat.id) === String(product.category_id))
+                          ?.name || "-"}
                       </td>
                       <td>{product.price || "-"}</td>
                       <td>
@@ -321,8 +341,14 @@ function Products() {
                         <input
                           type="checkbox"
                           checked={product.is_available}
-                          onChange={() => handleToggleAvailability(product.id, product.is_available)}
+                          onChange={() =>
+                            toggleAvailabilityMutation.mutate({
+                              id: product.id,
+                              isAvailable: product.is_available,
+                            })
+                          }
                           className="mx-2"
+                          disabled={toggleAvailabilityMutation.isLoading}
                         />
                       </td>
                       <td className="text-center">
@@ -358,6 +384,7 @@ function Products() {
                           <button
                             className="btn btn-danger btn-sm position-relative"
                             onClick={() => handleDelete(product.id, product.name)}
+                            disabled={deleteMutation.isLoading}
                           >
                             <FaTrashAlt />
                             <span className="badge bg-dark">حذف</span>

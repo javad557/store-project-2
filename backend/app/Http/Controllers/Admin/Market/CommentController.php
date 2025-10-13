@@ -13,30 +13,34 @@ class CommentController extends Controller
      * Display a listing of the resource.
      */
 
-     public function index(Request $request)
-    {
-        try {
-            $query = Comment::with(['user', 'product'])->latest();
-            // جستجو بر اساس محتوای نظر
-            if ($request->has('search') && $request->search) {
-                $query->where('body', 'like', '%' . $request->search . '%');
-            }
-
-            // فیلتر بر اساس وضعیت
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
-            $comments = $query->get();
-            Comment::where('seen', 0)->update(['seen' => 1]);
-            return response()->json($comments);
-        } catch (\Exception $e) {
-            Log::error('خطا در دریافت نظرات: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'خطایی در دریافت نظرات رخ داد',
-            ], 500);
+    public function index(Request $request)
+{
+    try {
+        $query = Comment::with(['user', 'product'])->latest();
+        // جستجو بر اساس محتوای نظر
+        if ($request->has('search') && $request->search) {
+            $query->where('body', 'like', '%' . $request->search . '%');
         }
-    }
 
+        // فیلتر بر اساس وضعیت
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $comments = $query->get();
+        Comment::where('seen', 0)->update(['seen' => 1]);
+
+        // پاسخ با کلید data
+        return response()->json([
+            'data' => $comments
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('خطا در دریافت نظرات: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'خطایی در دریافت نظرات رخ داد',
+        ], 500);
+    }
+}
 
        public function new_comments()
     {

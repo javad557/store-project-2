@@ -34,18 +34,12 @@ export const updateCustomer = async (id, data) => {
 };
 
 export const deleteCustomer = async (id) => {
-    const response = await axios.delete(`/admin/users/customerusers/${id}`, {
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-    });
-    return response.data; // بازگشت response.data
+   return await axiosInstance.delete( `/admin/users/customerusers/${id}`);
 };
 
 
 export const toggleCustomerStatus = async (id) => {
-    const response = await axios.patch(
+    const response = await axiosInstance.patch(
         `/admin/users/customerusers/changeBlock/${id}`,
         {},
         {

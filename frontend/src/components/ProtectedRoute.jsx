@@ -1,58 +1,38 @@
 // src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { showError } from "../utils/notifications";
 
-const ProtectedRoute = ({ children, position, requiredPermission }) => {
-  const { user, loading, checkAuth } = useAuth();
-  const [authChecked, setAuthChecked] = useState(false);
+const ProtectedRoute = ({ children, requiredPermission }) => {
+  const { user, loading } = useAuth();
+  const token = localStorage.getItem("auth_token");
 
-  useEffect(() => {
-    const verifyAuth = async () => {
-      if (!user && !loading) {
-        const success = await checkAuth();
-        setAuthChecked(true);
-        if (!success) {
-          toast.error("لطفاً ابتدا وارد شوید");
-        }
-      } else {
-        setAuthChecked(true);
-      }
-    };
-
-    verifyAuth();
-  }, [user, loading, checkAuth]);
-
-  if (!authChecked || loading) {
-    return <div>در حال بارگذاری...</div>;
+  // اگر در حال لودینگ هستیم و توکن وجود داره، اسپینر نشون بده
+  if (loading && token) {
+    return <div>در حال بارگذاری صفحه...</div>;
   }
 
-  if (!user) {
+  // اگر توکن وجود نداره، پیام توست نشون بده و به صفحه لاگین هدایت کن
+  if (!token) {
+    showError("لطفاً ابتدا وارد شوید");
+    return <Navigate to="/auth/loginregister" replace />;
+  }
+  
+  // اگر کاربر ادمین نیست، پیام توست نشون بده و به صفحه لاگین هدایت کن
+  if (user && user.is_admin === false) {
+    showError("ورود غیر مجاز");
     return <Navigate to="/auth/loginregister" replace />;
   }
 
-  // بررسی position
-  if (position) {
-    if (position === "admin" && user.is_admin !== 1) {
-  
-      toast.error("شما دسترسی کافی برای این صفحه را ندارید");
-      return <Navigate to="/" replace />;
-    }
-    if (position === "customer" && user.is_admin !== 0 && user.is_admin !== 1) {
- 
-      toast.error("شما دسترسی کافی برای این صفحه را ندارید");
-      return <Navigate to="/" replace />;
-    }
+  // اگر پرمیشن لازم وجود داره و کاربر اون پرمیشن رو نداره، پیام توست و خطا نشون بده
+  if (requiredPermission && user && !user.all_permissions.includes(requiredPermission)) {
+    showError("شما مجوز لازم برای ورود به این بخش را ندارید");
+
+    return <div>شما مجوز لازم برای دسترسی به این بخش را ندارید.</div>;
   }
 
-  // بررسی مجوزهای مورد نیاز
-  if (requiredPermission && !user.all_permissions?.includes(requiredPermission)) {
-
-    toast.error("شما دسترسی کافی برای این صفحه را ندارید");
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
+  // اگر همه‌چیز اوکیه، کامپوننت فرزند رو رندر کن
   return children;
 };
 

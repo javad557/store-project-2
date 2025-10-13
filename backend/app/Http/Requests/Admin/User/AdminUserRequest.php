@@ -64,46 +64,7 @@ class AdminUserRequest extends FormRequest
                 Rule::exists('roles', 'id'),
             ],
         ];
-
-        // قانون سفارشی برای رمز عبور
-        $passwordRules = [
-            'string',
-            'min:8',
-            function ($attribute, $value, $fail) {
-                $errors = [];
-
-                if (!preg_match('/[A-Z]/', $value)) {
-                    $errors[] = 'رمز عبور باید حداقل یک حرف بزرگ داشته باشد.';
-                }
-                if (!preg_match('/[a-z]/', $value)) {
-                    $errors[] = 'رمز عبور باید حداقل یک حرف کوچک داشته باشد.';
-                }
-                if (!preg_match('/[0-9]/', $value)) {
-                    $errors[] = 'رمز عبور باید حداقل یک عدد داشته باشد.';
-                }
-                if (!preg_match('/[@$!%*?&+-]/', $value)) {
-                    $errors[] = 'رمز عبور باید حداقل یک علامت خاص (@$!%*?&+-) داشته باشد.';
-                }
-
-                if (!empty($errors)) {
-                    foreach ($errors as $error) {
-                        $fail($error);
-                    }
-                }
-            },
-        ];
-        $confirmPasswordRules = ['same:password'];
-
-        // برای store: رمز عبور و تأیید آن اجباری
-        if ($isStore) {
-            $rules['password'] = array_merge(['required'], $passwordRules);
-            $rules['confirm_password'] = array_merge(['required'], $confirmPasswordRules);
-        } else {
-            // برای update: رمز عبور و تأیید آن اختیاری
-            $rules['password'] = array_merge(['nullable'], $passwordRules);
-            $rules['confirm_password'] = array_merge(['nullable'], $confirmPasswordRules);
-        }
-
+    
         return $rules;
     }
 }

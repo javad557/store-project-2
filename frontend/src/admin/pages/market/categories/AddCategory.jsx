@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import { addCategory, getCategories } from "../../../services/market/categoryService.js";
 
@@ -7,24 +8,36 @@ function AddCategory() {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [nameError, setNameError] = useState("");
-  const [categories, setCategories] = useState([]); // مقدار اولیه آرایه خالی
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await getCategories();
-        // مطمئن می‌شیم که response.data یه آرایه باشه
-        setCategories(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        setCategories([]); // در صورت خطا، آرایه خالی ست می‌کنیم
-        showError("دریافت دسته‌بندی‌ها با خطا مواجه شد");
-      }
-    };
-    fetchCategories();
-  }, []);
+  // دریافت دسته‌بندی‌ها با useQuery
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories();
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    onError: () => {
+      showError("دریافت دسته‌بندی‌ها با خطا مواجه شد");
+    },
+  });
 
-  const handleSubmit = async (e) => {
+  // افزودن دسته‌بندی با useMutation
+  const addMutation = useMutation({
+    mutationFn: addCategory,
+    onSuccess: (response) => {
+      showSuccess(response.data.message);
+      // invalidate کردن کش برای به‌روزرسانی لیست دسته‌بندی‌ها
+      queryClient.invalidateQueries(["categories"]);
+      navigate("/admin/market/categories");
+    },
+    onError: () => {
+      showError("افزودن دسته‌بندی با خطا مواجه شد");
+    },
+  });
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     setNameError("");
 
@@ -33,16 +46,10 @@ function AddCategory() {
       return;
     }
 
-    try {
-      const response = await addCategory({
-        name,
-        parent_id: parentId || null,
-      });
-      showSuccess(response.data.message);
-      navigate("/admin/market/categories");
-    } catch (error) {
-      showError("افزودن دسته‌بندی با خطا مواجه شد");
-    }
+    addMutation.mutate({
+      name,
+      parent_id: parentId || null,
+    });
   };
 
   return (
@@ -61,6 +68,7 @@ function AddCategory() {
               type="submit"
               form="category-form"
               className="btn btn-success btn-sm"
+              disabled={addMutation.isLoading}
             >
               <i className="fa fa-check"></i> تأیید
             </button>
@@ -77,6 +85,7 @@ function AddCategory() {
                 id="category-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={addMutation.isLoading}
               />
               {nameError && <div className="invalid-feedback">{nameError}</div>}
             </div>
@@ -90,9 +99,10 @@ function AddCategory() {
                 id="parent-category"
                 value={parentId}
                 onChange={(e) => setParentId(e.target.value)}
+                disabled={isLoading || addMutation.isLoading}
               >
                 <option value="">دسته‌بندی اصلی</option>
-                {Array.isArray(categories) && categories.length > 0 ? (
+                {categories.length > 0 ? (
                   categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -102,6 +112,7 @@ function AddCategory() {
                   <option disabled>هیچ دسته‌بندی‌ای موجود نیست</option>
                 )}
               </select>
+              {isLoading && <div>در حال بارگذاری دسته‌بندی‌ها...</div>}
             </div>
           </form>
         </section>

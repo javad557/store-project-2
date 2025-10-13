@@ -92,7 +92,7 @@ class CustomerUserController extends Controller
      */
     public function destroy(User $customeruser)
     {
-        // Log::info('test',['test',$customeruser]);
+        Log::info('test',['deletetest',$customeruser]);
           try{
              DB::beginTransaction();
 
@@ -110,7 +110,7 @@ class CustomerUserController extends Controller
             $customeruser->violations()->delete();
             $customeruser->copans()->delete();
             $customeruser->otps()->delete();
-            $customeruser->recoveryCodes()->delete();
+            $customeruser->recoveryOtps()->delete();
             $customeruser->tickets()->each(function ($ticket) {
                 $ticket->children()->delete();
                 $ticket->delete();

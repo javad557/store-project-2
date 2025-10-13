@@ -60,6 +60,8 @@ Route::get('/test', function () {
     return response()->json(['message' => 'Hello from Laravel!']);
 });
 
+Route::get('/admin/users/get_user', [AdminUserController::class, 'get_user']);
+
 
 Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
 
@@ -135,7 +137,7 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
             Route::get('/', [BannerController::class, 'index'])->middleware('permission:read_banners');
             Route::get('/{banner}', [BannerController::class, 'show'])->middleware('permission:edit_banner');
             Route::post('/', [BannerController::class, 'store'])->middleware('permission:add_banner');
-            Route::put('/{banner}', [BannerController::class, 'update'])->middleware('permission:edit_banner');
+            Route::post('/{banner}', [BannerController::class, 'update'])->middleware('permission:edit_banner');
             Route::delete('/{banner}', [BannerController::class, 'destroy'])->middleware('permission:edit_banner');
         });
 
@@ -174,8 +176,7 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
          Route::prefix('adminusers')->group(function () {
             Route::get('/', [AdminUserController::class, 'index'])->middleware('permission:read_adminusers');
             // Route::patch('/changeStatus/{comment}', [AdminUserController::class, 'changeStatus']);
-             Route::get('/get_user', [AdminUserController::class, 'get_user'])->middleware('permission:edit_adminuser');
-            Route::get('/{adminuser}', [AdminUserController::class, 'show'])->where('ticket', '[0-9]+')->middleware('permission:edit_adminuser');
+             Route::get('/{adminuser}', [AdminUserController::class, 'show'])->where('adminuser', '[0-9]+');
            
             Route::post('/', [AdminUserController::class, 'store'])->middleware('permission:add_adminuser');
             Route::put('/{adminuser}', [AdminUserController::class, 'update'])->middleware('permission:edit_adminuser');

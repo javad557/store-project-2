@@ -1,93 +1,114 @@
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { showSuccess, showError } from "../../../../utils/notifications.jsx";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { addBanner } from "../../../services/marketing/bannerService";
+import { showError, showSuccess } from "../../../../utils/notifications";
+
 
 function AddBanner() {
-  const [title, setTitle] = useState("");
-  const [image, setImage] = useState(null);
-  const [url, setUrl] = useState("");
-  const [position, setPosition] = useState("");
-  const [errors, setErrors] = useState([]);
+
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    const validFormats = ["image/jpeg", "image/jpg", "image/png"];
-    const maxSize = 2 * 1024 * 1024; // 2MB
+  const [formData,setFormData]=useState({
+    title : "",
+    image : "",
+    url : "",
+    position : "",
+  })
 
-    const imageErrors = [];
-    if (!file) {
-      imageErrors.push("لطفاً یک تصویر انتخاب کنید");
-    } else if (!validFormats.includes(file.type)) {
-      imageErrors.push("فرمت تصویر غیرمجاز است (فقط jpg, jpeg, png مجاز است)");
-    } else if (file.size > maxSize) {
-      imageErrors.push("حجم تصویر بیش از 2 مگابایت است");
-    } else {
-      setImage(file);
+   const [errors,setErrors]=useState({
+    title : null,
+    image : null,
+    url : null,
+    position : null,
+  })
+
+
+const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    const inputValue = name === "image" ? files[0] : value;
+    // const error = validateField(name, inputValue);
+    // setErrors((prev) => ({ ...prev, [name]: error }));
+    setFormData((prev) => ({ ...prev, [name]: inputValue }));
+};
+
+  const mutation = useMutation({
+    mutationFn: addBanner,
+    onSuccess: (response)=>{
+      queryClient.invalidateQueries(['banners']);
+      showSuccess(response.data.message);
+      navigate("/admin/marketing/banners")
+    },
+    onError: (error)=>{
+      if(error.response.status === 422){
+         const validationErrors = error.response.data.errors || {};
+        setErrors(
+          Object.keys(validationErrors).reduce((acc, key) => {
+            acc[key] = Array.isArray(validationErrors[key])
+              ? validationErrors[key][0]
+              : validationErrors[key];
+            return acc;
+          }, { name: null, amount: null, delivery_time: null })
+        );
+        showError('مقادیر فرم ها نامعتبر هستند');
+      }
+      else{
+        showError(error.response.data.error);
+      }
     }
+  })
 
-    setErrors(imageErrors);
-  };
 
-  const handleSubmit = async (e) => {
+  const validateField = (name, value) => {
+    switch (name) {
+        case "title":
+            if (!value.trim()) return "عنوان بنر الزامی است";
+            if (value.trim().length < 3) return "عنوان بنر نباید کمتر از 3 کاراکتر باشد";
+            return null;
+        case "image":
+            if (!value) return "تصویر بنر الزامی است";
+            const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+            if (value && !allowedTypes.includes(value.type)) return "فقط فایل‌های JPG یا PNG مجاز هستند";
+            if (value && value.size > 5 * 1024 * 1024) return "حجم فایل باید کمتر از 5 مگابایت باشد";
+            return null;
+        case "url":
+            if (!value.trim()) return "آدرس بنر الزامی است";
+            return null;
+        case "position":
+            if (!value.trim()) return "موقعیت بنر الزامی است";
+            if (value && isNaN(value)) return "موقعیت باید یک عدد باشد";
+            return null;
+        default:
+            return null;
+    }
+};
+
+
+
+ const handleSubmit = (e) => {
     e.preventDefault();
-    const newErrors = [];
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("image", formData.image); // فایل تصویر
+    data.append("url", formData.url);
+    data.append("position", formData.position);
 
-    if (!title.trim()) {
-      newErrors.push("عنوان بنر الزامی است");
-    }
-    if (!image) {
-      newErrors.push("عکس بنر الزامی است");
-    }
-    if (!position.trim()) {
-      newErrors.push("موقعیت بنر الزامی است");
-    }
-
-    setErrors(newErrors);
-    if (newErrors.length > 0) {
-      showError("لطفاً فیلدهای الزامی را پر کنید");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("image", image);
-      formData.append("url", url);
-      formData.append("position", position);
-
-      const response = await axios.post(
-        "http://localhost:8000/api/admin/marketing/banners",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            "Accept": "application/json",
-          },
-        }
-      );
-
-      showSuccess(response.data.message || "بنر با موفقیت اضافه شد");
-      setTitle("");
-      setImage(null);
-      setUrl("");
-      setPosition("");
-      setErrors([]);
-      e.target.reset();
-      navigate("/admin/marketing/banners");
-    } catch (error) {
-      console.warn("خطا در ارسال داده‌ها به سرور:", error.message);
-      showError(
-        error.response?.status === 404
-          ? "سرور در دسترس نیست"
-          : error.response?.status === 403
-          ? "عدم دسترسی به سرور"
-          : "افزودن بنر با خطا مواجه شد: " + (error.response?.data?.error || error.message)
-      );
-    }
+    mutation.mutate(data);
   };
+
+
+const isFormValid = () => {
+    const newErrors = {
+        title: validateField("title", formData.title),
+        image: validateField("image", formData.image),
+        url: validateField("url", formData.url),
+        position: validateField("position", formData.position),
+    };
+    return !Object.values(newErrors).some((error) => error);
+};
+  
 
   return (
     <section className="row" dir="rtl">
@@ -113,11 +134,12 @@ function AddBanner() {
                     </label>
                     <input
                       type="text"
-                      className="form-control form-control-sm"
+                       className={`form-control form-control-sm ${errors.title ? "is-invalid" : ""}`}
                       id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      name="title"
+                      onChange={handleChange}
                     />
+                    {errors.title && <div className="invalid-feedback">{errors.title}</div>}
                   </div>
 
                   <div className="form-group mb-3">
@@ -127,9 +149,11 @@ function AddBanner() {
                     <input
                       type="file"
                       accept="image/jpeg,image/jpg,image/png"
-                      onChange={handleImageChange}
-                      className="form-control form-control-sm"
+                      className={`form-control form-control-sm ${errors.image ? "is-invalid" : ""}`}
+                      name="image"
+                       onChange={handleChange}
                     />
+                    {errors.image && <div className="invalid-feedback">{errors.image}</div>}
                   </div>
 
                   <div className="form-group mb-3">
@@ -138,11 +162,12 @@ function AddBanner() {
                     </label>
                     <input
                       type="text"
-                      className="form-control form-control-sm"
+                       className={`form-control form-control-sm ${errors.url ? "is-invalid" : ""}`}
                       id="url"
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
+                      name="url"
+                       onChange={handleChange}
                     />
+                     {errors.url && <div className="invalid-feedback">{errors.url}</div>}
                   </div>
 
                   <div className="form-group mb-3">
@@ -151,25 +176,20 @@ function AddBanner() {
                     </label>
                     <input
                       type="text"
-                      className="form-control form-control-sm"
+                      className={`form-control form-control-sm ${errors.position ? "is-invalid" : ""}`}
                       id="position"
-                      value={position}
-                      onChange={(e) => setPosition(e.target.value)}
+                      name="position"
+                       onChange={handleChange}
                     />
+                     {errors.position && <div className="invalid-feedback">{errors.position}</div>}
                   </div>
-
-                  {errors.length > 0 && (
-                    <div className="text-danger mt-2">
-                      {errors.map((error, index) => (
-                        <p key={index}>{error}</p>
-                      ))}
-                    </div>
-                  )}
                 </section>
 
                 <section className="col-12">
-                  <button type="submit" className="btn btn-success btn-sm">
-                    <i className="fa fa-check me-1"></i> افزودن
+                  <button type="submit" className="btn btn-success btn-sm"
+                  disabled={mutation.isPending || !isFormValid()}>
+                    <i className="fa fa-check me-1"></i> 
+                    {mutation.isPending ? 'در حال ارسال' : 'افزودن'}
                   </button>
                 </section>
               </section>

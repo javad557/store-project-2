@@ -15,7 +15,7 @@ export const addBanner = async (data) => {
 };
 
 export const updateBanner = async (id, data) => {
-  return await axiosInstance.put(`/admin/marketing/banners/${id}`, data);
+  return await axiosInstance.post(`/admin/marketing/banners/${id}`, data);
 };
 
 export const deleteBanner = async (id) => {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Market\CategoryRequest;
 use App\Models\Market\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CategoryController extends Controller
 {
@@ -14,11 +15,13 @@ class CategoryController extends Controller
      */
     public function index()
     {
+
         try{
-             $categories = Category::query()
-            ->select('id', 'name')
-            ->get();
-            return response()->json($categories);
+            $categories = Category :: with('parent')->get();
+            Log::info('categories',['categories'=>$categories]);
+            return response()->json([
+                'data'=>$categories,
+            ],200);
 
          } catch (\Exception $e) {
             return response()->json([
@@ -57,11 +60,18 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-         return response()->json([
-            'id'=>$category->id,
-            'name'=>$category->name,
-            'parent_id'=>$category->parent_id,
-         ]);
+        try{
+            return response()->json([
+            'data'=>$category,
+         ],200);
+
+        }
+        catch(\Throwable $e){
+            Log::error($e->getMessage());
+            return response()->json([
+                'error'=>'خطا در دریافت دسته بندی مورد نظر',
+            ],500);
+        }
     }
 
     /**

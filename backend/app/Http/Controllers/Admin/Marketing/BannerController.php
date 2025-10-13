@@ -16,17 +16,14 @@ class BannerController extends Controller
      */
     public function index(Request $request)
     {
-         $authHeader = $request->header('Authorization', 'هدر Authorization ارسال نشده');
-        Log::info('Authorization Header', [
-            'url' => $request->fullUrl(),
-            'method' => $request->method(),
-            'authorization' => $authHeader,
-        ]);
         try{
-             $banners = Banner::all();
-            return response()->json($banners);
+            $banners = Banner::all();
+            return response()->json([
+                'data'=>$banners,
+            ],200);
 
          } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'error' => 'خطایی در دریافت بنرها رخ داد',
             ], 500);
@@ -38,8 +35,8 @@ class BannerController extends Controller
      */
     public function store(BannerRequest $request)
     {
+        // Log::info('storetest',['test'=>$request->all()]);
         try{
-
             $imegePath=$request->file('image')->store('images/banners','public');
             Banner::create([
                 'title'=>$request->title,
@@ -63,8 +60,10 @@ class BannerController extends Controller
      */
     public function show(Banner $banner)
     {
-          try{
-            return response()->json($banner);
+        try{
+            return response()->json([
+                'data'=>$banner
+            ]);
             
         } catch (\Exception $e) {
             Log::error('خطا در ارسال بنر: ' . $e->getMessage());
@@ -75,8 +74,9 @@ class BannerController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(BannerRequest $request, Banner $banner)
+    public function update(Request $request, Banner $banner)
     {
+        // Log::info('test',['updatetest'=>$request->all()]);
           try {
              $data = [
                 'title' => $request->title,

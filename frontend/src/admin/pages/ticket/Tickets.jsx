@@ -22,6 +22,9 @@ function Tickets() {
     },
   });
 
+  console.log(tickets);
+  
+
   const mutation = useMutation({
     mutationFn: changeStatus,
     onSuccess: (response, ticketId) => {
