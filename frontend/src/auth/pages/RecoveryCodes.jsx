@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // ایمپورت useAuth
-import { getRecoveryCodes, login } from "../services/authService";
+import { getRecoveryCodes, login as authServiceLogin } from "../services/authService";
 import { showSuccess, showError } from "../../utils/notifications";
 import { getSettings } from "../../admin/services/settingsService";
 import logo from "../assets/images/logo.png";
@@ -13,7 +12,6 @@ function RecoveryCodes() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth(); // دریافت تابع login از AuthContext
 
   const { otp_token: otpToken } = location.state || {};
 
@@ -69,15 +67,16 @@ function RecoveryCodes() {
   const handleLogin = async () => {
     try {
       console.log("Starting login with otpToken:", otpToken);
-      const response = await login(otpToken);
+      const response = await authServiceLogin(otpToken);
       console.log("API response:", response);
       const { message, auth_token, is_admin } = response;
-      console.log("Extracted data:", { message, auth_token, is_admin });
 
       if (auth_token) {
-        // فراخوانی تابع login از AuthContext
+        // ذخیره توکن در localStorage
+        localStorage.setItem("auth_token", auth_token);
+        // هدایت به داشبورد مناسب بر اساس نقش کاربر
         const redirectPath = is_admin === 1 ? "/admin/dashboard" : "/dashboard";
-        await login(auth_token, redirectPath);
+        navigate(redirectPath);
         showSuccess(message || "ورود با موفقیت انجام شد");
         localStorage.removeItem("otp_token"); // حذف otp_token
       } else {

@@ -1,25 +1,26 @@
-// src/components/AdminHeader.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import logo from "/src/admin/assets/images/logo.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getNewTickets } from "../services/ticketService";
 import { getNewComments } from "../services/market/commentService";
 import { logout as logoutService } from "../../auth/services/authService";
 import { showSuccess, showError } from "../../utils/notifications";
+import logo from "/src/admin/assets/images/logo.png";
 import PropTypes from "prop-types";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 
 function AdminHeader({ toggleSidebar }) {
-  const { user, setUser, loading } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, loading } = useAdminAuth();
 
-  // چک کردن پرمیشن‌ها
-  const hasTicketPermission = user?.all_permissions.includes("read_tickets");
-  const hasCommentPermission = user?.all_permissions.includes("read_comments");
+
+  // بررسی پرمیشن‌های واقعی کاربر
+  const hasTicketPermission = user?.all_permissions?.includes("read_tickets") || false;
+  const hasCommentPermission = user?.all_permissions?.includes("read_comments") || false;
 
   // درخواست برای تیکت‌ها
   const { data: newTickets = [], isError: isTicketError, error: ticketError, isLoading: isNewTicketLoading } = useQuery({
@@ -28,7 +29,7 @@ function AdminHeader({ toggleSidebar }) {
       const response = await getNewTickets();
       return Array.isArray(response.data.data) ? response.data.data : [];
     },
-    enabled: !loading && !!user && hasTicketPermission,
+    enabled: hasTicketPermission, // وابسته به پرمیشن واقعی
   });
 
   // درخواست برای کامنت‌ها
@@ -38,7 +39,7 @@ function AdminHeader({ toggleSidebar }) {
       const response = await getNewComments();
       return Array.isArray(response.data.data) ? response.data.data : [];
     },
-    enabled: !loading && !!user && hasCommentPermission,
+    enabled: hasCommentPermission, // وابسته به پرمیشن واقعی
   });
 
   const toggleNotifications = () => setShowNotifications(!showNotifications);
@@ -47,19 +48,36 @@ function AdminHeader({ toggleSidebar }) {
 
   const handleLogout = async () => {
     try {
-      localStorage.setItem("is_logging_out", "true"); // تنظیم flag لاگ‌اوت
+      localStorage.setItem("is_logging_out", "true");
       const response = await logoutService();
-      setUser(null); // اول user رو null کن
-      showSuccess(response.message || "با موفقیت از سیستم خارج شدید");
-      navigate("/auth/loginregister", { replace: true });
-    } catch (error) {
-      console.error("Logout error:", error);
-      setUser(null); // اول user رو null کن
       localStorage.removeItem("auth_token");
       localStorage.removeItem("otp_token");
       localStorage.removeItem("identifier");
       localStorage.removeItem("fingerprint");
-      localStorage.removeItem("is_logging_out"); // پاک کردن flag
+      localStorage.removeItem("is_logging_out");
+      // پاک کردن کش React Query
+      queryClient.invalidateQueries(["user"]);
+      queryClient.removeQueries(["user"]);
+      queryClient.invalidateQueries(["newTickets"]);
+      queryClient.removeQueries(["newTickets"]);
+      queryClient.invalidateQueries(["newComments"]);
+      queryClient.removeQueries(["newComments"]);
+      showSuccess(response.message || "با موفقیت از سیستم خارج شدید");
+      navigate("/auth/loginregister", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("otp_token");
+      localStorage.removeItem("identifier");
+      localStorage.removeItem("fingerprint");
+      localStorage.removeItem("is_logging_out");
+      // پاک کردن کش در صورت خطا
+      queryClient.invalidateQueries(["user"]);
+      queryClient.removeQueries(["user"]);
+      queryClient.invalidateQueries(["newTickets"]);
+      queryClient.removeQueries(["newTickets"]);
+      queryClient.invalidateQueries(["newComments"]);
+      queryClient.removeQueries(["newComments"]);
       showError(error.message || "خطا در خروج از سیستم");
       navigate("/auth/loginregister", { replace: true });
     }
@@ -225,13 +243,7 @@ function AdminHeader({ toggleSidebar }) {
                 data-bs-toggle="dropdown"
               >
                 <span className="header-username">
-                  {loading ? (
-                    "در حال دریافت اطلاعات"
-                  ) : user ? (
-                    user.name || user.full_name || "کاربر"
-                  ) : (
-                    <span className="text-danger">خطا در دریافت اطلاعات کاربر</span>
-                  )}
+                  {user?.name || "کاربر"}
                   <i className="fas fa-user user-icon me-2"></i>
                 </span>
               </span>

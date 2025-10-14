@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPermissions, updatePermission, deletePermission } from "../../../services/user/permissionsService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import { FaCheck, FaTrashAlt } from "react-icons/fa";
@@ -8,63 +9,88 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Swal from "sweetalert2";
 
 function Permissions() {
-  const [permissions, setPermissions] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [permissions, setPermissions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch permissions and roles
+  // دریافت دسترسی‌ها و نقش‌ها با useQuery
+  const {
+    data: { permissions: permissionsData = [], roles: rolesData = [] } = {},
+    isLoading: isPermissionsLoading,
+    isSuccess: isPermissionsSuccess,
+    error: permissionsError,
+  } = useQuery({
+    queryKey: ["permissions"],
+    queryFn: async () => {
+      const response = await getPermissions();
+      console.log("Raw permissions response:", response);
+      console.log("Permissions data:", response.data.permissions);
+      console.log("Roles data:", response.data.roles);
+      return {
+        permissions: Array.isArray(response.data.permissions) ? response.data.permissions : [],
+        roles: Array.isArray(response.data.roles)
+          ? response.data.roles.map((role) => ({
+              value: role.id,
+              label: role.name,
+            }))
+          : [],
+      };
+    },
+    onError: (error) => {
+      console.error("Error fetching data:", error);
+      showError(error.response?.data?.error || "سرویس دسترسی‌ها در دسترس نیست");
+    },
+  });
+
+  // تنظیم permissions در state
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const permissionsResponse = await getPermissions();
-        console.log("Raw permissions response:", permissionsResponse);
-        console.log("Permissions data:", permissionsResponse.data.permissions);
-        console.log("Roles data:", permissionsResponse.data.roles);
+    if (isPermissionsSuccess && permissionsData) {
+      console.log("Setting permissions to state:", permissionsData);
+      setPermissions(permissionsData);
+    }
+  }, [isPermissionsSuccess, permissionsData]);
 
-        setPermissions(
-          Array.isArray(permissionsResponse.data.permissions)
-            ? permissionsResponse.data.permissions
-            : []
-        );
+  // به‌روزرسانی دسترسی با useMutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => updatePermission(id, payload),
+    onSuccess: (response) => {
+      showSuccess(response.data?.message || "دسترسی با موفقیت ویرایش شد");
+      queryClient.invalidateQueries(["permissions"]);
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || "خطا در به‌روزرسانی دسترسی";
+      showError(errorMessage);
+    },
+  });
 
-        setRoles(
-          Array.isArray(permissionsResponse.data.roles)
-            ? permissionsResponse.data.roles.map((role) => ({
-                value: role.id,
-                label: role.name,
-              }))
-            : []
-        );
-      }
+  // حذف دسترسی با useMutation
+  const deleteMutation = useMutation({
+    mutationFn: deletePermission,
+    onSuccess: (response, id) => {
+      setPermissions((prev) => prev.filter((permission) => permission.id !== id));
+      showSuccess(response.data?.message || "دسترسی با موفقیت حذف شد");
+      queryClient.invalidateQueries(["permissions"]);
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || "خطا در حذف دسترسی";
+      showError(errorMessage);
+    },
+  });
 
-      catch (error) {
-        console.error("Error fetching data:", error);
-        setPermissions([]);
-        setRoles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Handle input changes
+  // مدیریت تغییرات ورودی‌ها
   const handleInputChange = (permissionId, field, value) => {
-    setPermissions(
-      permissions.map((permission) =>
-        permission.id === permissionId
-          ? { ...permission, [field]: value }
-          : permission
+    setPermissions((prev) =>
+      prev.map((permission) =>
+        permission.id === permissionId ? { ...permission, [field]: value } : permission
       )
     );
   };
 
-  // Handle roles dropdown change
+  // مدیریت تغییرات نقش‌ها در Select
   const handleRolesChange = (permissionId, selectedOptions) => {
-    setPermissions(
-      permissions.map((permission) =>
+    setPermissions((prev) =>
+      prev.map((permission) =>
         permission.id === permissionId
           ? {
               ...permission,
@@ -78,54 +104,18 @@ function Permissions() {
     );
   };
 
-  // Handle API errors
-  const getErrorMessage = (error) => {
-    if (!error.response) {
-      return "ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کنید";
-    }
-
-    const { status, data } = error.response;
-    console.log("API error response:", data);
-
-    if (status === 404) {
-      return "دسترسی مورد نظر یافت نشد یا سرویس در دسترس نیست";
-    } else if (status === 422) {
-      if (data.errors) {
-        if (typeof data.errors === "object") {
-          return Object.values(data.errors).flat().join("، ");
-        } else if (Array.isArray(data.errors)) {
-          return data.errors.join("، ");
-        }
-      } else if (data.error) {
-        return data.error;
-      } else if (data.message) {
-        return data.message;
-      }
-      return "داده‌های ارسالی نامعتبر است";
-    } else if (status === 500) {
-      return "خطایی در سرور رخ داده است. لطفاً بعداً تلاش کنید";
-    }
-    return "خطای ناشناخته‌ای رخ داده است";
+  // به‌روزرسانی دسترسی
+  const handleUpdatePermission = (permissionId, updatedData) => {
+    const payload = {
+      name: updatedData.name || "",
+      roles: updatedData.roles.map((role) => role.id),
+      description: updatedData.description || "",
+    };
+    console.log("Sending update payload:", { permissionId, payload });
+    updateMutation.mutate({ id: permissionId, payload });
   };
 
-  // Update permission
-  const handleUpdatePermission = async (permissionId, updatedData) => {
-    try {
-      const payload = {
-        name: updatedData.name,
-        roles: updatedData.roles.map((role) => role.id),
-        description: updatedData.description,
-      };
-      console.log("Sending update payload:", { permissionId, payload });
-      await updatePermission(permissionId, payload);
-      showSuccess("دسترسی با موفقیت ویرایش شد");
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      showError(errorMessage);
-    }
-  };
-
-  // Delete permission
+  // حذف دسترسی
   const handleDeletePermission = async (permissionId, name) => {
     const result = await Swal.fire({
       title: `آیا از حذف دسترسی "${name}" مطمئن هستید؟`,
@@ -140,18 +130,15 @@ function Permissions() {
     });
 
     if (result.isConfirmed) {
-      try {
-        await deletePermission(permissionId);
-        setPermissions(
-          permissions.filter((permission) => permission.id !== permissionId)
-        );
-        showSuccess("دسترسی با موفقیت حذف شد");
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-        showError(errorMessage);
-      }
+      deleteMutation.mutate(permissionId);
     }
   };
+
+  // فیلتر کردن دسترسی‌ها بر اساس جستجو
+  const filteredPermissions = permissions.filter((permission) =>
+    permission.name?.toLowerCase()?.includes(searchQuery.toLowerCase()) ?? false
+  );
+  console.log("Filtered permissions:", filteredPermissions);
 
   return (
     <section className="row" dir="rtl">
@@ -220,7 +207,12 @@ function Permissions() {
             <h5>دسترسی‌ها</h5>
           </section>
 
-          {loading && <div className="text-center my-4">در حال بارگذاری...</div>}
+          {isPermissionsLoading && <div className="text-center my-4">در حال بارگذاری...</div>}
+          {permissionsError && (
+            <div className="text-center my-4 text-danger">
+              خطا در بارگذاری دسترسی‌ها
+            </div>
+          )}
 
           <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
             <button
@@ -233,7 +225,9 @@ function Permissions() {
               <input
                 type="text"
                 className="form-control form-control-sm form-text"
-                placeholder="جستجو"
+                placeholder="جستجو بر اساس نام دسترسی"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </section>
@@ -250,8 +244,8 @@ function Permissions() {
                 </tr>
               </thead>
               <tbody>
-                {permissions.length > 0 ? (
-                  permissions.map((permission, index) => (
+                {filteredPermissions.length > 0 ? (
+                  filteredPermissions.map((permission, index) => (
                     <tr key={permission.id}>
                       <th>{index + 1}</th>
                       <td>
@@ -267,8 +261,8 @@ function Permissions() {
                       <td>
                         <Select
                           isMulti
-                          options={roles}
-                          value={roles.filter((role) =>
+                          options={rolesData}
+                          value={rolesData.filter((role) =>
                             permission.roles.some((r) => r.id === role.value)
                           )}
                           onChange={(selected) =>
@@ -276,10 +270,11 @@ function Permissions() {
                           }
                           className="roles-select"
                           placeholder="انتخاب نقش‌ها"
-                          menuPortalTarget={document.body} // Append dropdown to body
+                          menuPortalTarget={document.body}
                           styles={{
-                            menuPortal: (base) => ({ ...base, zIndex: 1000 }), // Ensure high z-index
+                            menuPortal: (base) => ({ ...base, zIndex: 1000 }),
                           }}
+                          isDisabled={updateMutation.isLoading || deleteMutation.isLoading}
                         />
                       </td>
                       <td>
@@ -306,6 +301,7 @@ function Permissions() {
                                 description: permission.description,
                               })
                             }
+                            disabled={updateMutation.isLoading || deleteMutation.isLoading}
                           >
                             <FaCheck />
                             <span className="badge bg-dark">تأیید</span>
@@ -315,6 +311,7 @@ function Permissions() {
                             onClick={() =>
                               handleDeletePermission(permission.id, permission.name)
                             }
+                            disabled={updateMutation.isLoading || deleteMutation.isLoading}
                           >
                             <FaTrashAlt />
                             <span className="badge bg-dark">حذف</span>

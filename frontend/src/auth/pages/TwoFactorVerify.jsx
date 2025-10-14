@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // ایمپورت useAuth
 import { verifyTwoFactor } from "../services/authService";
 import { getSettings } from "../../admin/services/settingsService";
 import { showSuccess, showError } from "../../utils/notifications";
@@ -13,7 +12,6 @@ function TwoFactorVerify() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth(); // دریافت تابع login از AuthContext
 
   const { otp_token: otpToken, identifier, fingerprint } = location.state || {};
 
@@ -59,9 +57,11 @@ function TwoFactorVerify() {
       showSuccess(response.data.message);
 
       if (response.data.auth_token) {
-        // فراخوانی تابع login از AuthContext
+        // ذخیره توکن در localStorage
+        localStorage.setItem("auth_token", response.data.auth_token);
+        // هدایت به داشبورد مناسب بر اساس نقش کاربر
         const redirectPath = response.data.is_admin ? "/admin/dashboard" : "/dashboard";
-        await login(response.data.auth_token, redirectPath);
+        navigate(redirectPath);
       } else {
         // در صورت عدم وجود auth_token، به صفحه لاگین هدایت شود
         showError("خطا در تأیید ورود");

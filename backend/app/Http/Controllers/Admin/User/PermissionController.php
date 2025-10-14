@@ -41,7 +41,7 @@ class PermissionController extends Controller
             // Log::info('Permissions and roles fetched', ['permissions' => $permissions, 'roles' => $roles]);
 
             return response()->json([
-                  'roles' => $roles,
+                'roles' => $roles,
                 'permissions' => $permissions,
               
             ], 200);

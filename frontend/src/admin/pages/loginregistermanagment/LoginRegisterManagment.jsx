@@ -1,11 +1,13 @@
+// src/admin/pages/LoginRegisterSettings.jsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, updateSettings } from "../../services/settingsService.js";
 import { showSuccess, showError } from "../../../utils/notifications.jsx";
 import { FaCheck } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function LoginRegisterSettings() {
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState({
     login_page_description: "",
     too_many_attempts_error: "",
@@ -26,55 +28,80 @@ function LoginRegisterSettings() {
     twofa_page_description: "",
     twofa_error_message: "",
   });
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // دریافت تنظیمات
+  const {
+    data: settingsData,
+    isLoading: isSettingsLoading,
+    isError: isSettingsError,
+    error: settingsError,
+    isSuccess: isSettingsSuccess,
+  } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const response = await getSettings();
+      console.log("Raw settings response:", response);
+      console.log("Settings data:", response.data);
+      return response.data;
+    },
+  });
+
+  // تنظیم settings بعد از موفقیت دریافت داده‌ها
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await getSettings();
-        console.log("پاسخ کامل API:", response);
-        console.log("داده‌های API:", response.data);
-        if (response.data) {
-          setSettings(response.data);
-        } else {
-          setError("هیچ تنظیمی یافت نشد");
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error("خطا در دریافت تنظیمات:", error);
-        setError("سرویس تنظیمات در دسترس نیست");
-        setLoading(false);
-      }
-    };
+    if (isSettingsSuccess && settingsData) {
+      setSettings(settingsData);
+    } else if (isSettingsSuccess && !settingsData) {
+      setError("هیچ تنظیمی یافت نشد");
+    }
+  }, [isSettingsSuccess, settingsData]);
 
-    fetchSettings();
-  }, []);
+  // مدیریت خطای دریافت تنظیمات
+  useEffect(() => {
+    if (isSettingsError && settingsError) {
+      console.error("Error fetching settings:", settingsError);
+      setError(settingsError.response?.data?.error || "سرویس تنظیمات در دسترس نیست");
+    }
+  }, [isSettingsError, settingsError]);
 
+  // به‌روزرسانی تنظیمات
+  const updateMutation = useMutation({
+    mutationFn: (payload) => updateSettings(payload),
+    onSuccess: (response) => {
+      showSuccess(response.message || "تنظیمات با موفقیت ذخیره شد");
+      queryClient.invalidateQueries({ queryKey: ["settings"], refetchType: "all" });
+    },
+    onError: (error) => {
+      const errorMessage =
+        error.response?.data?.errors?.join("، ") ||
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "ذخیره تنظیمات با خطا مواجه شد";
+      setError(errorMessage);
+      showError(errorMessage);
+    },
+  });
+
+  // مدیریت تغییرات ورودی‌ها
   const handleInputChange = (field, value) => {
     setSettings((prev) => ({
       ...prev,
-      [field]: field.includes("hours") || field.includes("count") || field.includes("attempts") || field.includes("minutes")
-        ? parseInt(value) || 0
-        : value,
+      [field]:
+        field.includes("hours") ||
+        field.includes("count") ||
+        field.includes("attempts") ||
+        field.includes("minutes")
+          ? parseInt(value) || 0
+          : value,
     }));
+    setError(null); // پاک کردن خطای سرور هنگام تغییر ورودی
   };
 
- const handleSaveSettings = async () => {
-  try {
-    console.log("داده‌های ارسالی برای آپدیت:", settings); // برای دیباگ
-    const response = await updateSettings(settings); // ذخیره پاسخ API
-    showSuccess(response.message || "تنظیمات با موفقیت ذخیره شد"); // استفاده از پیام API یا پیام پیش‌فرض
-  } catch (error) {
-    console.error("خطا در ذخیره تنظیمات:", error.response?.data);
-    const errorMessage =
-      error.response?.data?.errors?.join("، ") ||
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      "ذخیره تنظیمات با خطا مواجه شد";
-    showError(errorMessage);
-  }
-};
+  // ارسال فرم
+  const handleSaveSettings = () => {
+    console.log("Sending update settings payload:", settings);
+    updateMutation.mutate(settings);
+  };
 
   return (
     <section className="row" dir="rtl">
@@ -107,7 +134,7 @@ function LoginRegisterSettings() {
             <h5>مدیریت تنظیمات لاگین و رجیستر</h5>
           </section>
 
-          {loading ? (
+          {isSettingsLoading ? (
             <div className="text-center my-4">در حال بارگذاری...</div>
           ) : error ? (
             <div className="alert alert-danger text-center">{error}</div>
@@ -279,13 +306,16 @@ function LoginRegisterSettings() {
                 <button
                   className="btn btn-success btn-sm uniform-button"
                   onClick={handleSaveSettings}
+                  disabled={updateMutation.isPending}
                 >
                   <FaCheck className="me-1" /> ثبت تغییرات
                 </button>
+                {error && (
+                  <div className="text-danger mt-2">{error}</div>
+                )}
               </div>
             </section>
           )}
-
         </section>
       </section>
     </section>

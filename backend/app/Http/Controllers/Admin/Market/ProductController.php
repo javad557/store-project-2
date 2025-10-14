@@ -17,6 +17,7 @@ class ProductController extends Controller
      */
   public function index(): JsonResponse
 {
+    Log::info('test',['productstest'=>'yes']);
     try {
         $products = Product::query()
             ->select('id', 'name', 'category_id', 'brand_id', 'price', 'marketable')

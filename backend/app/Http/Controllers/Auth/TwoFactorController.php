@@ -7,6 +7,8 @@ use App\Models\User\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use PragmaRX\Google2FA\Google2FA;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 
 class TwoFactorController extends Controller
 {
@@ -23,15 +25,14 @@ class TwoFactorController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function enableTwoFactor(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
+ public function enableTwoFactor()
+{
+    try {
+        // شناسایی کاربر از توکن JWT
+        $user = JWTAuth::parseToken()->authenticate();
 
-        $user = User::find($request->user_id);
         if (!$user) {
-            return response()->json(['error' => 'کاربر یافت نشد'], 404);
+            return response()->json(['error' => 'کاربر احراز هویت نشده است'], 401);
         }
 
         // تولید کلید مخفی
@@ -50,33 +51,39 @@ class TwoFactorController extends Controller
             $secretKey
         );
 
-        Log::info('2FA enabled for user', [
-            'user_id' => $user->id,
-            'secret_key' => $secretKey,
-        ]);
-
         return response()->json([
             'message' => 'ورود دو مرحله‌ای با موفقیت فعال شد. لطفاً کلید مخفی یا QR Code را در Google Authenticator ثبت کنید.',
             'secret_key' => $secretKey,
             'qr_code_url' => $qrCodeUrl,
         ], 200);
-    }
 
+    } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+        return response()->json(['error' => 'توکن نامعتبر است'], 401);
+    } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+        return response()->json(['error' => 'توکن منقضی شده است'], 401);
+    } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+        return response()->json(['error' => 'خطا در پردازش توکن'], 401);
+    }
+}
     /**
      * غیرفعال‌سازی ورود دو مرحله‌ای برای کاربر
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function disableTwoFactor(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
+  public function disableTwoFactor(Request $request)
+{
+    try {
+        // شناسایی کاربر از توکن JWT
+        $user = JWTAuth::parseToken()->authenticate();
 
-        $user = User::find($request->user_id);
         if (!$user) {
-            return response()->json(['error' => 'کاربر یافت نشد'], 404);
+            return response()->json(['error' => 'کاربر احراز هویت نشده است'], 401);
+        }
+
+        // بررسی اینکه آیا 2FA برای کاربر فعال است یا نه
+        if (!$user->two_factor_enabled) {
+            return response()->json(['error' => 'ورود دو مرحله‌ای برای این کاربر فعال نیست'], 400);
         }
 
         // حذف کلید مخفی و غیرفعال کردن 2FA
@@ -90,5 +97,13 @@ class TwoFactorController extends Controller
         return response()->json([
             'message' => 'ورود دو مرحله‌ای با موفقیت غیرفعال شد.',
         ], 200);
+
+    } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+        return response()->json(['error' => 'توکن نامعتبر است'], 401);
+    } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+        return response()->json(['error' => 'توکن منقضی شده است'], 401);
+    } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+        return response()->json(['error' => 'خطا در پردازش توکن'], 401);
     }
+}
 }

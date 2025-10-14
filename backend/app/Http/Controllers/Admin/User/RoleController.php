@@ -85,12 +85,11 @@ class RoleController extends Controller
      */
     public function update(RoleRequest $request, Role $role)
     {
-        // Log::info('test',['updatetest'=>$request->all()]);
+        Log::info('test',['updatetest'=>$request->all()]);
          try {
             // به‌روزرسانی فیلدهای Permission
             $role->update([
                 'name' => $request->name,
-                'descriptions' => $request->description ?? null,
             ]);
 
             // همگام‌سازی نقش‌ها در جدول واسطه

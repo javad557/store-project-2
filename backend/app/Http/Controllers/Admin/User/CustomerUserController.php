@@ -71,7 +71,6 @@ class CustomerUserController extends Controller
                 'mobile' => $request->input('mobile'),
                 'national_code' => $request->input('national_code'),
                 'birthdate' => $request->input('birthdate'), // تاریخ به‌صورت میلادی YYYY-MM-DD
-                'password' => $request->filled('password') ? Hash::make($request->input('password')) : $customeruser->password,
             ]);
 
             return response()->json([

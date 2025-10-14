@@ -57,6 +57,7 @@ class GuaranteeController extends Controller
   public function show(Guarantee $guarantee, Product $product)
 {
 
+    Log::info('test',['guaranteetest'=>$guarantee]);
     try {
         // فرض می‌کنیم product_id از درخواست (مثلاً query parameter) ارسال شده
         $guaranteeData = $product->guarantees->where('id', $guarantee->id)->first();
@@ -73,7 +74,9 @@ class GuaranteeController extends Controller
             'price_increase' => $guaranteeData->pivot->price_increase,
         ];
 
-        return response()->json($response);
+        return response()->json([
+            'data'=>$response,
+        ]);
 
     } catch (\Exception $e) {
         return response()->json([

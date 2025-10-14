@@ -15,7 +15,6 @@ function AdminLayout() {
 
   // console.log(user);
   
-  
 
   return (
     <div className="min-vh-100 bg-light" dir="rtl">

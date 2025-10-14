@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCustomer, updateCustomer } from "../../../services/user/customerService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
-import "bootstrap/dist/css/bootstrap.min.css";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import DateObject from "react-date-object";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "react-multi-date-picker/styles/layouts/mobile.css";
 
 const styles = {
@@ -19,6 +20,9 @@ const styles = {
 };
 
 function EditCustomerUser() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     name: "",
     last_name: "",
@@ -38,60 +42,87 @@ function EditCustomerUser() {
     mobile: null,
     national_code: null,
     birthdate: null,
-    password: [], // آرایه برای نمایش چندین خطای رمز عبور
+    password: [],
     password_confirmation: null,
   });
-  const [loading, setLoading] = useState({
-    form: false,
-    customer: true,
-  });
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const hasFetched = useRef(false);
 
+  // بررسی تغییرات فرم برای هشدار خروج
   const isFormDirty = useMemo(() => {
     return Object.values(formData).some((value) => (typeof value === "string" ? !!value : !!value));
   }, [formData]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      setLoading((prev) => ({ ...prev, customer: true }));
-      try {
-        const userResponse = await getCustomer(id);
-        if (!userResponse.data) {
-          throw new Error("داده‌های کاربر دریافت نشد");
-        }
-        setFormData({
-          name: userResponse.data.name || "",
-          last_name: userResponse.data.last_name || "",
-          email: userResponse.data.email || "",
-          mobile: userResponse.data.mobile || "",
-          national_code: userResponse.data.national_code || "",
-          birthdate: userResponse.data.birthdate ? new DateObject(userResponse.data.birthdate) : null,
-          birthdate_server: userResponse.data.birthdate || null,
-          password: "",
-          password_confirmation: "",
-        });
-        console.log("User Response:", userResponse.data);
-      } catch (error) {
-        console.error("خطا در دریافت اطلاعات کاربر:", error);
-        showError("خطا در دریافت اطلاعات کاربر");
-        navigate("/admin/user/customerusers");
-      } finally {
-        setLoading((prev) => ({ ...prev, customer: false }));
+  // دریافت اطلاعات کاربر با useQuery
+  const { data: customerData, isLoading: isCustomerLoading, isSuccess: isCustomerSuccess } = useQuery({
+    queryKey: ["customer", id],
+    queryFn: async () => {
+      const response = await getCustomer(id);
+      if (!response.data) {
+        throw new Error("داده‌های کاربر دریافت نشد");
       }
-    };
-    fetchData();
-  }, [id, navigate]);
+      return response.data;
+    },
+    onError: (error) => {
+      console.error("خطا در دریافت اطلاعات کاربر:", error);
+      showError(error.response?.data?.error || "خطا در دریافت اطلاعات کاربر");
+      navigate("/admin/user/customerusers");
+    },
+  });
 
+  // پر کردن formData بعد از دریافت داده‌ها
+  useEffect(() => {
+    if (isCustomerSuccess && customerData) {
+      setFormData({
+        name: customerData.name || "",
+        last_name: customerData.last_name || "",
+        email: customerData.email || "",
+        mobile: customerData.mobile || "",
+        national_code: customerData.national_code || "",
+        birthdate: customerData.birthdate ? new DateObject(customerData.birthdate) : null,
+        birthdate_server: customerData.birthdate || null,
+        password: "",
+        password_confirmation: "",
+      });
+      console.log("User Response:", customerData);
+    }
+  }, [isCustomerSuccess, customerData]);
+
+  // به‌روزرسانی کاربر با useMutation
+  const updateMutation = useMutation({
+    mutationFn: (customerData) => updateCustomer(id, customerData),
+    onSuccess: (response) => {
+      showSuccess(response.data?.message || "کاربر با موفقیت ویرایش شد");
+      queryClient.invalidateQueries(["customers"]);
+      navigate("/admin/user/customerusers");
+    },
+    onError: (error) => {
+      console.error("خطا در به‌روزرسانی کاربر:", error);
+      const errorData = error.response?.data;
+      let errorMessage = errorData?.message || errorData?.error || "خطا در به‌روزرسانی کاربر";
+
+      if (errorData?.errors) {
+        const serverErrors = { form: "لطفاً خطاهای فرم را بررسی کنید." };
+        Object.keys(errorData.errors).forEach((key) => {
+          serverErrors[key] = Array.isArray(errorData.errors[key])
+            ? errorData.errors[key]
+            : [errorData.errors[key]];
+        });
+        setErrors(serverErrors);
+        errorMessage = "لطفاً خطاهای فرم را بررسی کنید.";
+      } else {
+        setErrors((prev) => ({ ...prev, form: errorMessage }));
+      }
+      showError(errorMessage);
+    },
+  });
+
+  // مدیریت تغییرات ورودی‌ها
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: name === 'password' ? [] : null }));
+    setErrors((prev) => ({ ...prev, [name]: name === "password" ? [] : null }));
   };
 
+  // مدیریت انتخاب تاریخ
   const handleDateChange = (date) => {
     if (date) {
       const formattedDate = date.toDate().toISOString().split("T")[0];
@@ -110,46 +141,25 @@ function EditCustomerUser() {
     setErrors((prev) => ({ ...prev, birthdate: null }));
   };
 
+  // ارسال فرم
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading((prev) => ({ ...prev, form: true }));
-    setErrors({ form: null, name: null, last_name: null, email: null, mobile: null, national_code: null, birthdate: null, password: [], password_confirmation: null });
-    try {
-      const customerData = {
-        name: formData.name || null,
-        last_name: formData.last_name || null,
-        email: formData.email || null,
-        mobile: formData.mobile || null,
-        national_code: formData.national_code || null,
-        birthdate: formData.birthdate_server || null,
-        password: formData.password || null,
-        password_confirmation: formData.password_confirmation || null,
-      };
-      console.log("Data sent to API:", JSON.stringify(customerData, null, 2));
-      const response = await updateCustomer(id, customerData);
-      showSuccess(response.message || "کاربر با موفقیت ویرایش شد");
-      navigate("/admin/user/customerusers");
-    } catch (error) {
-      console.error("خطا در به‌روزرسانی کاربر:", error);
-      const errorData = error.response?.data;
-      let errorMessage = errorData?.message || errorData?.error || "خطا در به‌روزرسانی کاربر";
-      if (errorData?.errors) {
-        const serverErrors = {};
-        Object.keys(errorData.errors).forEach((key) => {
-          serverErrors[key] = Array.isArray(errorData.errors[key])
-            ? errorData.errors[key]
-            : [errorData.errors[key]];
-        });
-        setErrors((prev) => ({ ...prev, form: "لطفاً خطاهای فرم را بررسی کنید.", ...serverErrors }));
-        errorMessage = "لطفاً خطاهای فرم را بررسی کنید.";
-      }
-      showError(errorMessage);
-    } finally {
-      setLoading((prev) => ({ ...prev, form: false }));
-    }
+    const customerData = {
+      name: formData.name || null,
+      last_name: formData.last_name || null,
+      email: formData.email || null,
+      mobile: formData.mobile || null,
+      national_code: formData.national_code || null,
+      birthdate: formData.birthdate_server || null,
+      password: formData.password || null,
+      password_confirmation: formData.password_confirmation || null,
+    };
+    console.log("Data sent to API:", JSON.stringify(customerData, null, 2));
+    updateMutation.mutate(customerData);
   };
 
-  if (loading.customer) {
+  // نمایش لودینگ
+  if (isCustomerLoading) {
     return <div>در حال بارگذاری...</div>;
   }
 
@@ -211,7 +221,11 @@ function EditCustomerUser() {
                       value={formData.name}
                       onChange={handleChange}
                     />
-                    {errors.name && <div style={styles.error}>{errors.name}</div>}
+                    {errors.name && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.name) ? errors.name.join("، ") : errors.name}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -225,7 +239,11 @@ function EditCustomerUser() {
                       value={formData.last_name}
                       onChange={handleChange}
                     />
-                    {errors.last_name && <div style={styles.error}>{errors.last_name}</div>}
+                    {errors.last_name && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.last_name) ? errors.last_name.join("، ") : errors.last_name}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -239,7 +257,11 @@ function EditCustomerUser() {
                       value={formData.email}
                       onChange={handleChange}
                     />
-                    {errors.email && <div style={styles.error}>{errors.email}</div>}
+                    {errors.email && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.email) ? errors.email.join("، ") : errors.email}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -253,7 +275,11 @@ function EditCustomerUser() {
                       value={formData.mobile}
                       onChange={handleChange}
                     />
-                    {errors.mobile && <div style={styles.error}>{errors.mobile}</div>}
+                    {errors.mobile && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.mobile) ? errors.mobile.join("، ") : errors.mobile}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -267,7 +293,11 @@ function EditCustomerUser() {
                       value={formData.national_code}
                       onChange={handleChange}
                     />
-                    {errors.national_code && <div style={styles.error}>{errors.national_code}</div>}
+                    {errors.national_code && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.national_code) ? errors.national_code.join("، ") : errors.national_code}
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -289,40 +319,10 @@ function EditCustomerUser() {
                       disableYearPicker
                       disableMonthPicker
                     />
-                    {errors.birthdate && <div style={styles.error}>{errors.birthdate}</div>}
-                  </div>
-                </section>
-
-                <section className="col-12 col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="password">رمز عبور</label>
-                    <input
-                      type="password"
-                      className="form-control form-control-sm"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="برای تغییر رمز عبور، مقدار جدید وارد کنید"
-                    />
-                    {errors.password && errors.password.length > 0 && (
-                      <div style={styles.error}>{errors.password.join('، ')}</div>
-                    )}
-                  </div>
-                </section>
-
-                <section className="col-12 col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="password_confirmation">تأیید رمز عبور</label>
-                    <input
-                      type="password"
-                      className="form-control form-control-sm"
-                      name="password_confirmation"
-                      value={formData.password_confirmation}
-                      onChange={handleChange}
-                      placeholder="تأیید رمز عبور جدید"
-                    />
-                    {errors.password_confirmation && (
-                      <div style={styles.error}>{errors.password_confirmation}</div>
+                    {errors.birthdate && (
+                      <div style={styles.error}>
+                        {Array.isArray(errors.birthdate) ? errors.birthdate.join("، ") : errors.birthdate}
+                      </div>
                     )}
                   </div>
                 </section>
@@ -331,9 +331,9 @@ function EditCustomerUser() {
                   <button
                     type="submit"
                     className="btn btn-success btn-sm"
-                    disabled={loading.form}
+                    disabled={updateMutation.isLoading}
                   >
-                    {loading.form ? "در حال ثبت..." : "تأیید"}
+                    {updateMutation.isLoading ? "در حال ثبت..." : "تأیید"}
                   </button>
                   {errors.form && (
                     <div className="text-danger mt-2">{errors.form}</div>

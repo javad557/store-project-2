@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { AuthProvider } from "./context/AuthContext.jsx";
 import MainLayout from "./main/layouts/MainLayout";
 import AdminLayout from "./admin/layouts/AdminLayout";
 import Home from "./main/pages/Home";
@@ -62,463 +61,90 @@ import CategoryTickets from "./admin/pages/ticket/category/CategoryTickets.jsx";
 import AddCategoryTicket from "./admin/pages/ticket/category/AddCategoryTicket.jsx";
 import PriorityTickets from "./admin/pages/ticket/priority/PriorityTickets.jsx";
 import AddPriorityTicket from "./admin/pages/ticket/priority/AddPriorityTicket.jsx";
-
+import { AdminAuthProvider } from "./context/AdminAuthContext.jsx";
 
 function App() {
-  console.log("App component rendered");
   return (
     <Router>
-      <AuthProvider>
-        <ToastContainer position="top-right" autoClose={5000} closeOnClick />
-        <Routes>
-          {/* روت‌های عمومی */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
+      <ToastContainer position="top-right" autoClose={5000} closeOnClick />
+      <Routes>
+        {/* روت‌های عمومی */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+        </Route>
+        <Route path="/auth">
+          <Route path="loginregister" element={<LoginRegister />} />
+          <Route path="otpverify" element={<OtpVerify />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="recovery-codes" element={<RecoveryCodes />} />
+          <Route path="two-factor" element={<TwoFactorVerify />} />
+        </Route>
+
+        {/* روت‌های ادمین با والد AdminAuthProvider */}
+       <Route path="/admin" element={<AdminAuthProvider />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="market">
+            <Route path="categories" element={<ProtectedRoute requiredPermission="read_categories"><Categories /></ProtectedRoute>} />
+            <Route path="categories/add" element={<ProtectedRoute requiredPermission="add_category"><AddCategory /></ProtectedRoute>} />
+            <Route path="categories/edit/:id" element={<ProtectedRoute requiredPermission="edit_category"><EditCategory /></ProtectedRoute>} />
+            <Route path="brands" element={<ProtectedRoute requiredPermission="read_brands"><Brands /></ProtectedRoute>} />
+            <Route path="brands/add" element={<ProtectedRoute requiredPermission="add_brand"><AddBrand /></ProtectedRoute>} />
+            <Route path="products" element={<ProtectedRoute requiredPermission="read_products"><Products /></ProtectedRoute>} />
+            <Route path="products/add" element={<ProtectedRoute requiredPermission="add_product"><AddProduct /></ProtectedRoute>} />
+            <Route path="products/edit/:id" element={<ProtectedRoute requiredPermission="edit_product"><EditProduct /></ProtectedRoute>} />
+            <Route path="guarantees/:productId" element={<ProtectedRoute requiredPermission="read_guarantees"><Guarantees /></ProtectedRoute>} />
+            <Route path="guarantees/add/:productId" element={<ProtectedRoute requiredPermission="add_guarantee"><AddGuarantee /></ProtectedRoute>} />
+            <Route path="guarantees/edit/:guaranteeId/:productId" element={<ProtectedRoute requiredPermission="edit_guarantee"><EditGuarantee /></ProtectedRoute>} />
+            <Route path="gallery/:productId" element={<ProtectedRoute requiredPermission="read_products"><Gallery /></ProtectedRoute>} />
+            <Route path="gallery/add/:productId" element={<ProtectedRoute requiredPermission="add_product"><AddImage /></ProtectedRoute>} />
+            <Route path="variants/:productId" element={<ProtectedRoute requiredPermission="read_variants"><Variants /></ProtectedRoute>} />
+            <Route path="variants/variantmanagement/:productId" element={<ProtectedRoute requiredPermission="variant_management"><VariantManagement /></ProtectedRoute>} />
+            <Route path="comments" element={<ProtectedRoute requiredPermission="read_comments"><Comments /></ProtectedRoute>} />
           </Route>
-          <Route path="/auth">
-            <Route path="loginregister" element={<LoginRegister />} />
-            <Route path="otpverify" element={<OtpVerify />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="recovery-codes" element={<RecoveryCodes />} />
-            <Route path="two-factor" element={<TwoFactorVerify />} />
+          <Route path="marketing">
+            <Route path="banners" element={<ProtectedRoute requiredPermission="read_banners"><Banners /></ProtectedRoute>} />
+            <Route path="banners/add" element={<ProtectedRoute requiredPermission="add_banner"><AddBanner /></ProtectedRoute>} />
+            <Route path="banners/edit/:id" element={<ProtectedRoute requiredPermission="edit_banner"><EditBanner /></ProtectedRoute>} />
+            <Route path="copans" element={<ProtectedRoute requiredPermission="read_copans"><Copans /></ProtectedRoute>} />
+            <Route path="copans/add" element={<ProtectedRoute requiredPermission="add_copan"><AddCopan /></ProtectedRoute>} />
+            <Route path="copans/edit/:id" element={<ProtectedRoute requiredPermission="edit_copan"><EditCopan /></ProtectedRoute>} />
+            <Route path="amazings" element={<ProtectedRoute requiredPermission="read_amazings"><Amazings /></ProtectedRoute>} />
+            <Route path="amazings/add" element={<ProtectedRoute requiredPermission="add_amazing"><AddAmazing /></ProtectedRoute>} />
+            <Route path="amazings/edit/:id" element={<ProtectedRoute requiredPermission="edit_amazing"><EditAmazing /></ProtectedRoute>} />
           </Route>
-
-          {/* روت‌های محافظت‌شده */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute position="admin">
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="market">
-              <Route
-                path="categories"
-                element={
-                  <ProtectedRoute requiredPermission="read_categories">
-                    <Categories />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="categories/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_category">
-                    <AddCategory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="categories/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_category">
-                    <EditCategory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="brands"
-                element={
-                  <ProtectedRoute requiredPermission="read_brands">
-                    <Brands />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="brands/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_brand">
-                    <AddBrand />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="products"
-                element={
-                  <ProtectedRoute requiredPermission="read_products">
-                    <Products />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="products/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_product">
-                    <AddProduct />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="products/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_product">
-                    <EditProduct />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="guarantees/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="read_guarantees">
-                    <Guarantees />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="guarantees/add/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="add_guarantee">
-                    <AddGuarantee />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="guarantees/edit/:guaranteeId/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="edit_guarantee">
-                    <EditGuarantee />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="gallery/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="read_products">
-                    <Gallery />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="gallery/add/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="add_product">
-                    <AddImage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="variants/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="read_variants">
-                    <Variants />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="variants/variantmanagement/:productId"
-                element={
-                  <ProtectedRoute requiredPermission="variant_management">
-                    <VariantManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="comments"
-                element={
-                  <ProtectedRoute requiredPermission="read_comments">
-                    <Comments />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            <Route path="marketing">
-              <Route
-                path="banners"
-                element={
-                  <ProtectedRoute requiredPermission="read_banners">
-                    <Banners />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="banners/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_banner">
-                    <AddBanner />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="banners/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_banner">
-                    <EditBanner />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="copans"
-                element={
-                  <ProtectedRoute requiredPermission="read_copans">
-                    <Copans />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="copans/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_copan">
-                    <AddCopan />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="copans/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_copan">
-                    <EditCopan />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="amazings"
-                element={
-                  <ProtectedRoute requiredPermission="read_amazings">
-                    <Amazings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="amazings/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_amazing">
-                    <AddAmazing />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="amazings/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_amazing">
-                    <EditAmazing />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            <Route path="user">
-              <Route
-                path="permissions"
-                element={
-                  <ProtectedRoute requiredPermission="read_permissions">
-                    <Permissions />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="permissions/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_permission">
-                    <AddPermission />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="roles"
-                element={
-                  <ProtectedRoute requiredPermission="read_roles">
-                    <Roles />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="roles/add"
-                element={
-                  <ProtectedRoute requiredPermission="add_role">
-                    <AddRole />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="adminusers"
-                element={
-                  <ProtectedRoute requiredPermission="read_adminusers">
-                    <AdminUsers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="adminusers/add"
-                element={
-                  <ProtectedRoute requiredPermission="edit_adminuser">
-                    <AddAdminUser />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="adminusers/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_adminuser">
-                    <EditAdminUser />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="customerusers"
-                element={
-                  <ProtectedRoute requiredPermission="read_customerusers">
-                    <CustomerUsers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="customerusers/edit/:id"
-                element={
-                  <ProtectedRoute requiredPermission="edit_customeruser">
-                    <EditCustomerUser />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            <Route
-              path="deliveries"
-              element={
-                <ProtectedRoute requiredPermission="read_deliveries">
-                  <Deliveries />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="deliveries/add"
-              element={
-                <ProtectedRoute requiredPermission="add_delivery">
-                  <AddDelivery />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="deliveries/edit/:id"
-              element={
-                <ProtectedRoute requiredPermission="edit_delivery">
-                  <EditDelivery />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="loginregistermanagment"
-              element={
-                <ProtectedRoute requiredPermission="loginresiter_managment">
-                  <LoginRegisterSettings />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="pages"
-              element={
-                <ProtectedRoute requiredPermission="read_pages">
-                  <Pages />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="pages/add"
-              element={
-                <ProtectedRoute requiredPermission="add_page">
-                  <AddPage />
-                </ProtectedRoute>
-              }
-            />
-             <Route
-              path="pages/edit/:id"
-              element={
-                <ProtectedRoute requiredPermission="edit_delivery">
-                  <Editpage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="orders"
-              element={
-                <ProtectedRoute requiredPermission="read_orders">
-                  <Orders />
-                </ProtectedRoute>
-              }
-            />
-             <Route
-              path="orders/detail/:id"
-              element={
-                <ProtectedRoute requiredPermission="read_orders">
-                  <DetailOrder />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="orders/order_items/:id"
-              element={
-                <ProtectedRoute requiredPermission="read_orders">
-                  <OrderItems />
-                </ProtectedRoute>
-              }
-            />
-
-
+          <Route path="user">
+            <Route path="permissions" element={<ProtectedRoute requiredPermission="read_permissions"><Permissions /></ProtectedRoute>} />
+            <Route path="permissions/add" element={<ProtectedRoute requiredPermission="add_permission"><AddPermission /></ProtectedRoute>} />
+            <Route path="roles" element={<ProtectedRoute requiredPermission="read_roles"><Roles /></ProtectedRoute>} />
+            <Route path="roles/add" element={<ProtectedRoute requiredPermission="add_role"><AddRole /></ProtectedRoute>} />
+            <Route path="adminusers" element={<ProtectedRoute requiredPermission="read_adminusers"><AdminUsers /></ProtectedRoute>} />
+            <Route path="adminusers/add" element={<ProtectedRoute requiredPermission="edit_adminuser"><AddAdminUser /></ProtectedRoute>} />
+            <Route path="adminusers/edit/:id" element={<ProtectedRoute requiredPermission="edit_adminuser"><EditAdminUser /></ProtectedRoute>} />
+            <Route path="customerusers" element={<ProtectedRoute requiredPermission="read_customerusers"><CustomerUsers /></ProtectedRoute>} />
+            <Route path="customerusers/edit/:id" element={<ProtectedRoute requiredPermission="edit_customeruser"><EditCustomerUser /></ProtectedRoute>} />
+          </Route>
+          <Route path="deliveries" element={<ProtectedRoute requiredPermission="read_deliveries"><Deliveries /></ProtectedRoute>} />
+          <Route path="deliveries/add" element={<ProtectedRoute requiredPermission="add_delivery"><AddDelivery /></ProtectedRoute>} />
+          <Route path="deliveries/edit/:id" element={<ProtectedRoute requiredPermission="edit_delivery"><EditDelivery /></ProtectedRoute>} />
+          <Route path="loginregistermanagment" element={<ProtectedRoute requiredPermission="loginresiter_managment"><LoginRegisterSettings /></ProtectedRoute>} />
+          <Route path="pages" element={<ProtectedRoute requiredPermission="read_pages"><Pages /></ProtectedRoute>} />
+          <Route path="pages/add" element={<ProtectedRoute requiredPermission="add_page"><AddPage /></ProtectedRoute>} />
+          <Route path="pages/edit/:id" element={<ProtectedRoute requiredPermission="edit_page"><Editpage /></ProtectedRoute>} />
+          <Route path="orders" element={<ProtectedRoute requiredPermission="read_orders"><Orders /></ProtectedRoute>} />
+          <Route path="orders/detail/:id" element={<ProtectedRoute requiredPermission="read_orders"><DetailOrder /></ProtectedRoute>} />
+          <Route path="orders/order_items/:id" element={<ProtectedRoute requiredPermission="read_orders"><OrderItems /></ProtectedRoute>} />
           <Route path="ticket">
-
-            <Route
-              path="tickets"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <Tickets />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="ticket/:id"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <Ticket />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="category_tickets"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <CategoryTickets />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="category_tickets/add"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <AddCategoryTicket />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="priority_tickets"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <PriorityTickets />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="priority_tickets/add"
-              element={
-                <ProtectedRoute requiredPermission="read_tickets">
-                  <AddPriorityTicket />
-                </ProtectedRoute>
-              }
-            />
-
-            </Route>
-
+            <Route path="tickets" element={<ProtectedRoute requiredPermission="read_tickets"><Tickets /></ProtectedRoute>} />
+            <Route path="ticket/:id" element={<ProtectedRoute requiredPermission="read_tickets"><Ticket /></ProtectedRoute>} />
+            <Route path="category_tickets" element={<ProtectedRoute requiredPermission="read_tickets"><CategoryTickets /></ProtectedRoute>} />
+            <Route path="category_tickets/add" element={<ProtectedRoute requiredPermission="read_tickets"><AddCategoryTicket /></ProtectedRoute>} />
+            <Route path="priority_tickets" element={<ProtectedRoute requiredPermission="read_tickets"><PriorityTickets /></ProtectedRoute>} />
+            <Route path="priority_tickets/add" element={<ProtectedRoute requiredPermission="read_tickets"><AddPriorityTicket /></ProtectedRoute>} />
           </Route>
-          <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
-        </Routes>
-      </AuthProvider>
+        </Route>
+        <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
+      </Routes>
     </Router>
   );
 }

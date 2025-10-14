@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../../context/AuthContext"; // ایمپورت useAuth
 import { verifyOtp } from "../services/authService";
 import { getSettings } from "../../admin/services/settingsService";
 import { showSuccess, showError } from "../../utils/notifications";
 import logo from "../assets/images/logo.png";
 import "../styles/OtpVerify.css";
+import axiosInstance from "../../utils/api";
 
 function OtpVerify() {
   const [otp, setOtp] = useState("");
@@ -15,7 +14,6 @@ function OtpVerify() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth(); // دریافت تابع login از AuthContext
 
   const { otp_token: otpToken, identifier, fingerprint, expires_at: expiresAt } = location.state || {};
 
@@ -95,9 +93,11 @@ function OtpVerify() {
       showSuccess(response.data.message);
 
       if (response.data.auth_token) {
-        // فراخوانی تابع login از AuthContext به جای ذخیره دستی توکن
+        // ذخیره توکن در localStorage
+        localStorage.setItem("auth_token", response.data.auth_token);
+        // هدایت به داشبورد مناسب بر اساس نقش کاربر
         const redirectPath = response.data.is_admin ? "/admin/dashboard" : "/dashboard";
-        await login(response.data.auth_token, redirectPath);
+        navigate(redirectPath);
       } else if (response.data.redirect_to) {
         const redirectPath = resolveRedirectPath(response.data.redirect_to);
         navigate(redirectPath, {
@@ -108,7 +108,6 @@ function OtpVerify() {
           },
         });
       } else {
-        // در صورت عدم وجود auth_token و redirect_to، به مسیر پیش‌فرض هدایت شود
         navigate("/auth/loginregister");
       }
     } catch (error) {
@@ -133,7 +132,7 @@ function OtpVerify() {
   // ارسال مجدد OTP
   const handleResendOtp = async () => {
     try {
-      const { data } = await axios.post("/api/auth/resend-otp", { otp_token: otpToken });
+      const { data } = await axiosInstance.post("/auth/resend-otp", { otp_token: otpToken });
       showSuccess(data.message || "کد OTP جدید ارسال شد");
       navigate("/auth/otpverify", {
         state: {

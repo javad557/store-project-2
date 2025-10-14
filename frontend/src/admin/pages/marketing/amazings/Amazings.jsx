@@ -1,89 +1,89 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAmazingSales, deleteAmazingSale, toggleAmazingSaleStatus } from "../../../services/marketing/amazingSaleService.js";
-import { showSuccess, showError } from "../../../../utils/notifications.jsx";
+import { showSuccess, showError, confirmDelete } from "../../../../utils/notifications.jsx";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Swal from "sweetalert2";
 import moment from "moment-jalaali";
 
 function AmazingSales() {
-  const [amazingSales, setAmazingSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchAmazingSales = async () => {
-      try {
-        const response = await getAmazingSales();
-        console.log("پاسخ API:", response.data);
-        const mappedSales = Array.isArray(response.data)
-          ? response.data.map((sale) => ({
-              ...sale,
-              is_active: sale.status === 1,
-              product_name: sale.product ? sale.product.name : "Unknown",
-              formatted_end_date: sale.end_date
-                ? moment(sale.end_date).format("jYYYY/jMM/jDD")
-                : "بدون تاریخ انقضا",
-            }))
-          : [];
-        console.log("داده‌های نگاشت‌شده:", mappedSales);
-        setAmazingSales(mappedSales);
-      } catch (error) {
-        console.warn("دریافت فروش‌های شگفت‌انگیز با خطا مواجه شد:", error.message);
-        setAmazingSales([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // دریافت فروش‌های شگفت‌انگیز با useQuery
+  const { data: amazingSales = [], isLoading } = useQuery({
+    queryKey: ["amazingSales"],
+    queryFn: async () => {
+      const response = await getAmazingSales();
+      const rawSales = Array.isArray(response.data) ? response.data : [];
+      return rawSales.map((sale) => ({
+        ...sale,
+        is_active: sale.status === 1,
+        product_name: sale.product ? sale.product.name : "Unknown",
+        formatted_end_date: sale.end_date
+          ? moment(sale.end_date).format("jYYYY/jMM/jDD")
+          : "بدون تاریخ انقضا",
+      }));
+    },
+    onError: (error) => {
+      console.log("Error in fetchAmazingSales:", error.response); // برای دیباگ
+      const errorMessage = error.response?.data?.error || "دریافت فروش‌های شگفت‌انگیز با خطا مواجه شد";
+      showError(errorMessage);
+    },
+  });
 
-    fetchAmazingSales();
-  }, []);
+  // حذف فروش شگفت‌انگیز با useMutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteAmazingSale,
+    onSuccess: (response, id) => {
+      queryClient.setQueryData(["amazingSales"], (old) =>
+        old.filter((sale) => sale.id !== id)
+      );
+      showSuccess(response.data?.message || "فروش شگفت‌انگیز با موفقیت حذف شد");
+    },
+    onError: (error) => {
+      console.log("Error in deleteAmazingSale:", error.response); // برای دیباگ
+      const errorMessage = error.response?.data?.error || "حذف فروش شگفت‌انگیز با خطا مواجه شد";
+      showError(errorMessage);
+    },
+  });
 
-  const handleDelete = async (id, productName) => {
-    const result = await Swal.fire({
-      title: `آیا از حذف فروش شگفت‌انگیز برای "${productName}" مطمئن هستید؟`,
-      text: "این عملیات قابل بازگشت نیست!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "بله، حذف کن!",
-      cancelButtonText: "لغو",
-      reverseButtons: true,
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteAmazingSale(id);
-        setAmazingSales(amazingSales.filter((sale) => sale.id !== id));
-        showSuccess("فروش شگفت‌انگیز با موفقیت حذف شد");
-      } catch (error) {
-        console.error("خطا در حذف فروش شگفت‌انگیز:", error.response?.data, error.message);
-        showError("حذف فروش شگفت‌انگیز با خطا مواجه شد");
-      }
-    }
-  };
-
-  const handleToggleStatus = async (id) => {
-    try {
-      // پیدا کردن فروش شگفت‌انگیز فعلی برای محاسبه وضعیت جدید
-      const currentSale = amazingSales.find((sale) => sale.id === id);
-      const newStatus = currentSale.is_active ? 0 : 1; // معکوس کردن وضعیت
-      await toggleAmazingSaleStatus(id);
-      setAmazingSales(
-        amazingSales.map((sale) =>
-          sale.id === id ? { ...sale, is_active: !currentSale.is_active, status: newStatus } : sale
+  // تغییر وضعیت فروش شگفت‌انگیز با useMutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: toggleAmazingSaleStatus,
+    onSuccess: (response, id) => {
+      queryClient.setQueryData(["amazingSales"], (old) =>
+        old.map((sale) =>
+          sale.id === id
+            ? { ...sale, is_active: !sale.is_active, status: sale.is_active ? 0 : 1 }
+            : sale
         )
       );
-      showSuccess(`فروش شگفت‌انگیز با موفقیت ${newStatus ? "فعال" : "غیرفعال"} شد`);
-    } catch (error) {
-      console.error("خطا در تغییر وضعیت:", error.response?.data, error.message);
-      showError("تغییر وضعیت فروش شگفت‌انگیز با خطا مواجه شد");
+      showSuccess(
+        response.data?.message ||
+          `فروش شگفت‌انگیز با موفقیت ${!amazingSales.find((sale) => sale.id === id).is_active ? "فعال" : "غیرفعال"} شد`
+      );
+    },
+    onError: (error) => {
+      console.log("Error in toggleAmazingSaleStatus:", error.response); // برای دیباگ
+      const errorMessage = error.response?.data?.error || "تغییر وضعیت فروش شگفت‌انگیز با خطا مواجه شد";
+      showError(errorMessage);
+    },
+  });
+
+  const handleDelete = async (id, productName) => {
+    const isConfirmed = await confirmDelete(productName);
+    if (isConfirmed) {
+      deleteMutation.mutate(id);
     }
   };
 
+  const handleToggleStatus = (id) => {
+    toggleStatusMutation.mutate(id);
+  };
+
+  // فیلتر کردن فروش‌ها بر اساس جستجو
   const filteredSales = amazingSales.filter((sale) =>
     sale.product_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -112,69 +112,69 @@ function AmazingSales() {
           </section>
 
           <section className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>نام محصول</th>
-                  <th>درصد تخفیف</th>
-                  <th>تاریخ پایان</th>
-                  <th>وضعیت</th>
-                  <th className="max-width-16-rem text-center">
-                    <i className="fa fa-cogs"></i> تنظیمات
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
+            {isLoading ? (
+              <div>در حال بارگذاری...</div>
+            ) : (
+              <table className="table table-striped table-hover">
+                <thead>
                   <tr>
-                    <td colSpan="6" className="text-center">
-                      در حال بارگذاری...
-                    </td>
+                    <th>#</th>
+                    <th>نام محصول</th>
+                    <th>درصد تخفیف</th>
+                    <th>تاریخ پایان</th>
+                    <th>وضعیت</th>
+                    <th className="max-width-16-rem text-center">
+                      <i className="fa fa-cogs"></i> تنظیمات
+                    </th>
                   </tr>
-                ) : filteredSales.length > 0 ? (
-                  filteredSales.map((sale, index) => (
-                    <tr key={sale.id} style={{ cursor: "pointer" }}>
-                      <th>{index + 1}</th>
-                      <td>{sale.product_name || "Unknown"}</td>
-                      <td>{sale.amount}%</td>
-                      <td>{sale.formatted_end_date}</td>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={sale.is_active}
-                          onChange={() => handleToggleStatus(sale.id)}
-                        />
-                      </td>
-                      <td className="text-center">
-                        <div className="btn-group">
-                          <Link
-                            to={`/admin/marketing/amazings/edit/${sale.id}`}
-                            className="btn btn-primary btn-sm me-1"
-                          >
-                            <FaEdit className="me-1" />
-                            ویرایش
-                          </Link>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(sale.id, sale.product_name)}
-                          >
-                            <FaTrashAlt className="me-1" />
-                            حذف
-                          </button>
-                        </div>
+                </thead>
+                <tbody>
+                  {filteredSales.length > 0 ? (
+                    filteredSales.map((sale, index) => (
+                      <tr key={sale.id} style={{ cursor: "pointer" }}>
+                        <td>{index + 1}</td>
+                        <td>{sale.product_name || "Unknown"}</td>
+                        <td>{sale.amount}%</td>
+                        <td>{sale.formatted_end_date}</td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={sale.is_active}
+                            onChange={() => handleToggleStatus(sale.id)}
+                            disabled={toggleStatusMutation.isLoading}
+                          />
+                        </td>
+                        <td className="text-center">
+                          <div className="btn-group">
+                            <Link
+                              to={`/admin/marketing/amazings/edit/${sale.id}`}
+                              className="btn btn-primary btn-sm me-1"
+                            >
+                              <FaEdit className="me-1" />
+                              ویرایش
+                            </Link>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(sale.id, sale.product_name)}
+                              disabled={deleteMutation.isLoading}
+                            >
+                              <FaTrashAlt className="me-1" />
+                              حذف
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center">
+                        هیچ فروش شگفت‌انگیزی یافت نشد
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center">
-                      هیچ فروش شگفت‌انگیزی یافت نشد
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            )}
           </section>
         </section>
       </section>

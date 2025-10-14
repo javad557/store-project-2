@@ -1,12 +1,10 @@
-// src/context/AuthContext.jsx
-import { createContext, useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+// src/components/AdminWrapper.jsx
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, Outlet } from "react-router-dom";
 import { getUser } from "../admin/services/user/adminService";
 import { showError } from "../utils/notifications";
 
-const AuthContext = createContext();
-
-export const AuthProvider = ({ children }) => {
+const AdminWrapper = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -46,45 +44,28 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  const login = async (token, redirectTo = "/admin/dashboard") => {
-    try {
-      localStorage.setItem("auth_token", token);
-      const success = await fetchUserData();
-      if (success) {
-        navigate(redirectTo);
-      } else {
-        navigate("/auth/loginregister");
-        showError("ورود ناموفق، لطفاً دوباره تلاش کنید");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      navigate("/auth/loginregister");
-      showError("خطا در ورود، لطفاً دوباره تلاش کنید");
-    }
-  };
+  
 
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem("auth_token");
       if (token) {
         await fetchUserData();
+      } else {
+        navigate("/auth/loginregister");
       }
     };
     initializeAuth();
-  }, []);
+  }, [navigate]);
+
+  // استفاده از useMemo برای بهینه‌سازی context
+  const contextValue = useMemo(() => ({ user, setUser, loading }), [user, setUser, loading]);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login }}>
-      {children}
-    </AuthContext.Provider>
+    <div>
+      <Outlet context={contextValue} />
+    </div>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export default AdminWrapper;

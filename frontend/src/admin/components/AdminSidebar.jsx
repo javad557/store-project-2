@@ -1,25 +1,26 @@
-// src/admin/components/AdminSidebar.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // اضافه کردن AuthContext
-import PropTypes from "prop-types";
+import { useAdminAuth } from "../../context/AdminAuthContext"; // فرض می‌کنم مسیر درست context اینه
 
 function AdminSidebar() {
-  const { user, loading } = useAuth(); // گرفتن user و loading از AuthContext
+  const { user, loading } = useAdminAuth(); // دریافت user و loading از context
   const [openSection, setOpenSection] = useState(null);
 
+  // تابع برای تغییر وضعیت دراپ‌داون‌ها
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
 
-  // چک کردن پرمیشن‌ها
+  // چک کردن پرمیشن‌های کاربر
   const hasPermission = (permission) => {
-    return !loading && user?.all_permissions.includes(permission);
+    if (!permission) return true; // اگر پرمیشن لازم نیست (مثل داشبورد)
+    if (!user || !user.all_permissions) return false; // اگر کاربر یا پرمیشن‌ها وجود نداشته باشه
+    return user.all_permissions.includes(permission);
   };
 
-  // تعریف پرمیشن‌های موردنیاز برای هر بخش و لینک
+  // تعریف آیتم‌های سایدبار
   const sidebarItems = {
-    dashboard: { path: "/admin/dashboard", permission: null }, // بدون نیاز به پرمیشن
+    dashboard: { path: "/admin/dashboard", permission: null, label: "خانه" }, // بدون نیاز به پرمیشن
     market: {
       title: "مارکت",
       permission: [
@@ -61,16 +62,16 @@ function AdminSidebar() {
     },
     tickets: {
       title: "تیکت‌ها",
-      permission: ["read_tickets", "read_category_tickets", "read_priority_tickets"],
+      permission: ["read_tickets"],
       items: [
         { path: "/admin/ticket/tickets", label: "تیکت‌ها", icon: "fas fa-ticket-alt", permission: "read_tickets" },
-        { path: "/admin/ticket/category_tickets", label: "دسته‌بندی تیکت‌ها", icon: "fas fa-folder", permission: "read_category_tickets" },
-        { path: "/admin/ticket/priority_tickets", label: "اولویت تیکت‌ها", icon: "fas fa-exclamation-circle", permission: "read_priority_tickets" },
+        { path: "/admin/ticket/category_tickets", label: "دسته‌بندی تیکت‌ها", icon: "fas fa-folder", permission: "read_tickets" },
+        { path: "/admin/ticket/priority_tickets", label: "اولویت تیکت‌ها", icon: "fas fa-exclamation-circle", permission: "read_tickets" },
       ],
     },
     orders: { path: "/admin/orders", label: "سفارشات", icon: "fas fa-shopping-bag", permission: "read_orders" },
     deliveries: { path: "/admin/deliveries", label: "روش‌های ارسال", icon: "fas fa-truck", permission: "read_deliveries" },
-    loginRegister: { path: "/admin/loginregistermanagment", label: "لاگین رجیستر", icon: "fas fa-sign-in-alt", permission: "loginresiter_managment" },
+    loginRegister: { path: "/admin/loginregistermanagment", label: "تنظیمات لاگین رجیستر", icon: "fas fa-sign-in-alt", permission: "loginresiter_managment" },
     pages: { path: "/admin/pages", label: "صفحات اطلاع‌رسانی", icon: "fas fa-file-alt", permission: "read_pages" },
   };
 
@@ -80,6 +81,16 @@ function AdminSidebar() {
     return section.permission.some((perm) => hasPermission(perm));
   };
 
+  // اگر در حال لود شدن اطلاعات کاربر هستیم، یک لودینگ نمایش بده
+  if (loading) {
+    return <div>در حال بارگذاری...</div>;
+  }
+
+  // اگر کاربر لاگین نکرده یا ادمین نیست، چیزی نمایش نده
+  if (!user || !user.is_admin) {
+    return null;
+  }
+
   return (
     <aside id="sidebar" className="sidebar">
       <section className="sidebar-container" style={{ height: "100vh", overflowY: "auto" }}>
@@ -87,7 +98,7 @@ function AdminSidebar() {
           {/* داشبورد (همیشه نمایش داده می‌شه) */}
           <Link to={sidebarItems.dashboard.path} className="sidebar-link">
             <i className="fas fa-home"></i>
-            <span>{sidebarItems.dashboard.label || "خانه"}</span>
+            <span>{sidebarItems.dashboard.label}</span>
           </Link>
 
           {/* بخش مارکت */}
@@ -210,7 +221,7 @@ function AdminSidebar() {
             </Link>
           )}
 
-          {/* لاگین رجیستر */}
+          {/* تنظیمات لاگین رجیستر */}
           {hasPermission(sidebarItems.loginRegister.permission) && (
             <Link to={sidebarItems.loginRegister.path} className="sidebar-link">
               <i className={sidebarItems.loginRegister.icon}></i>

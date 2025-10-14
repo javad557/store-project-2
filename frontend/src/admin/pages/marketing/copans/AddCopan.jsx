@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+// src/admin/pages/marketing/AddCopan.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { addCopan } from "../../../services/marketing/discountService.js";
+import { getCustomers } from "../../../services/user/customerService.js";
+import { showSuccess, showError } from "../../../../utils/notifications.jsx";
+import { FaArrowRight } from "react-icons/fa";
 import Select from "react-select";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import DateObject from "react-date-object";
-import { addCopan } from "../../../services/marketing/discountService.js";
-import { getCustomers } from "../../../services/user/customerService.js";
-import { showSuccess, showError } from "../../../../utils/notifications.jsx";
-import { FaArrowRight } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-multi-date-picker/styles/layouts/mobile.css";
 
@@ -22,14 +24,15 @@ const styles = {
 };
 
 function AddCopan() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     code: "",
     user_id: null,
     amount: "",
-    end_date: null, // برای DatePicker (DateObject یا null)
+    end_date: null, // برای DatePicker
     end_date_server: "", // برای ارسال به سرور
   });
-  const [users, setUsers] = useState([]);
   const [errors, setErrors] = useState({
     form: null,
     code: null,
@@ -37,33 +40,46 @@ function AddCopan() {
     amount: null,
     end_date: null,
   });
-  const [loading, setLoading] = useState({
-    form: false,
-    users: true,
+
+  // دریافت لیست کاربران با useQuery
+  const {
+    data: users = [],
+    isLoading: isUsersLoading,
+    isError: isUsersError,
+    error: usersError,
+  } = useQuery({
+    queryKey: ["customers"],
+    queryFn: async () => {
+      const response = await getCustomers();
+      console.log("Raw customers response:", response);
+      console.log("Users data:", response.data);
+      return Array.isArray(response.data)
+        ? response.data.map((user) => ({
+            value: user.id,
+            label: `${user.name} (${user.email})`,
+          }))
+        : [];
+    },
+    onError: (error) => {
+      console.error("Error fetching users:", error);
+      showError(error.response?.data?.error || "خطا در بارگذاری کاربران");
+    },
   });
-  const navigate = useNavigate();
 
-  // دریافت لیست کاربران برای انتخاب سرچی
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await getCustomers();
-        const userOptions = response.data.map((user) => ({
-          value: user.id,
-          label: `${user.name} (${user.email})`,
-        }));
-        setUsers(userOptions);
-      } catch (error) {
-        console.error("خطا در دریافت کاربران:", error);
-        setErrors((prev) => ({ ...prev, users: "سرویس کاربران در دسترس نیست" }));
-        showError("خطا در دریافت لیست کاربران");
-      } finally {
-        setLoading((prev) => ({ ...prev, users: false }));
-      }
-    };
-
-    fetchUsers();
-  }, []);
+  // افزودن کد تخفیف جدید با useMutation
+  const addMutation = useMutation({
+    mutationFn: (payload) => addCopan(payload),
+    onSuccess: (response) => {
+      showSuccess(response.data?.message || "کد تخفیف با موفقیت اضافه شد");
+      queryClient.invalidateQueries({ queryKey: ["copans"], refetchType: "all" });
+      navigate("/admin/marketing/copans", { replace: true });
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || "خطا در افزودن کد تخفیف";
+      setErrors((prev) => ({ ...prev, form: errorMessage }));
+      showError(errorMessage);
+    },
+  });
 
   // مدیریت تغییرات ورودی‌ها
   const handleInputChange = (e) => {
@@ -74,18 +90,21 @@ function AddCopan() {
 
   // مدیریت انتخاب کاربر
   const handleUserChange = (selectedOption) => {
-    setFormData((prev) => ({ ...prev, user_id: selectedOption ? selectedOption.value : null }));
+    setFormData((prev) => ({
+      ...prev,
+      user_id: selectedOption ? selectedOption.value : null,
+    }));
     setErrors((prev) => ({ ...prev, user_id: null }));
   };
 
   // مدیریت انتخاب تاریخ
   const handleDateChange = (date) => {
     if (date) {
-      const formattedDate = date.toDate().toISOString().split("T")[0]; // فرمت YYYY-MM-DD برای سرور
+      const formattedDate = date.toDate().toISOString().split("T")[0]; // فرمت YYYY-MM-DD
       setFormData((prev) => ({
         ...prev,
-        end_date: date, // برای نمایش در DatePicker
-        end_date_server: formattedDate, // برای ارسال به سرور
+        end_date: date,
+        end_date_server: formattedDate,
       }));
     } else {
       setFormData((prev) => ({
@@ -109,7 +128,7 @@ function AddCopan() {
   };
 
   // ارسال فرم
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
@@ -123,23 +142,8 @@ function AddCopan() {
       amount: Number(formData.amount),
       end_date: formData.end_date_server,
     };
-
-    setLoading((prev) => ({ ...prev, form: true }));
-    try {
-      const response = await addCopan(payload);
-      showSuccess(response.data.message || "کد تخفیف با موفقیت اضافه شد");
-      navigate("/admin/marketing/copans");
-    } catch (error) {
-      console.error("خطا در افزودن کد تخفیف:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "خطا در افزودن کد تخفیف";
-      setErrors((prev) => ({ ...prev, form: errorMessage }));
-      showError(errorMessage);
-    } finally {
-      setLoading((prev) => ({ ...prev, form: false }));
-    }
+    console.log("Sending add copan payload:", payload);
+    addMutation.mutate(payload);
   };
 
   return (
@@ -165,6 +169,15 @@ function AddCopan() {
             outline: 0;
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
           }
+          .form-group {
+            margin-bottom: 1.5rem;
+          }
+          .btn-sm {
+            min-width: 120px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+          }
         `}
       </style>
       <section className="col-12">
@@ -183,6 +196,11 @@ function AddCopan() {
           </section>
 
           <section>
+            {isUsersError && (
+              <div className="text-center text-danger mb-4">
+                خطا در بارگذاری کاربران: {usersError.response?.data?.error || "لطفاً دوباره تلاش کنید."}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <section className="row">
                 <section className="col-12 col-md-6">
@@ -208,7 +226,7 @@ function AddCopan() {
                       onChange={handleUserChange}
                       placeholder="جستجوی کاربر..."
                       isClearable
-                      isLoading={loading.users}
+                      isLoading={isUsersLoading}
                       className={errors.user_id ? "is-invalid" : ""}
                     />
                     {errors.user_id && <div style={styles.error}>{errors.user_id}</div>}
@@ -255,9 +273,9 @@ function AddCopan() {
                   <button
                     type="submit"
                     className="btn btn-success btn-sm"
-                    disabled={loading.form}
+                    disabled={addMutation.isPending}
                   >
-                    {loading.form ? "در حال ثبت..." : "تأیید"}
+                    {addMutation.isPending ? "در حال ثبت..." : "تأیید"}
                   </button>
                   {errors.form && (
                     <div className="text-danger mt-2">{errors.form}</div>

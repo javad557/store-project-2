@@ -1,90 +1,146 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getGuarantee, updateGuarantee } from "../../../services/market/guaranteeService.js";
 import { getProduct } from "../../../services/market/productService.js";
 import { showSuccess, showError } from "../../../../utils/notifications.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-// استایل‌های سفارشی برای خطاها
-const styles = {
-  error: {
-    color: "red",
-    fontSize: "0.875rem",
-    marginTop: "0.25rem",
-    marginBottom: "0",
-  },
-};
-
 function EditGuarantee() {
+  const { guaranteeId, productId } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: "",
     duration: "",
     price_increase: "",
   });
-  const [product, setProduct] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState({
-    form: false,
-    product: true,
-    guarantee: true,
+  const [errors, setErrors] = useState({
+    name: null,
+    duration: null,
+    price_increase: null,
   });
-  const navigate = useNavigate();
-  const { guaranteeId,productId  } = useParams();
 
-  // دریافت اطلاعات محصول و گارانتی
-  useEffect(() => {
-
-    const fetchData = async () => {
-      try {
-        // دریافت اطلاعات محصول
-        const productResponse = await getProduct(productId);
-        console.log("محصول دریافت‌شده:", productResponse.data);
-        setProduct(productResponse.data);
-
-        // دریافت اطلاعات گارانتی با productId و guaranteeId
-        const guaranteeResponse = await getGuarantee(guaranteeId, productId);
-        console.log("گارانتی دریافت‌شده:", guaranteeResponse.data);
-        setFormData({
-          name: guaranteeResponse.data.name || "",
-          duration: guaranteeResponse.data.duration || "",
-          price_increase: guaranteeResponse.data.price_increase || "",
-        });
-      } catch (error) {
-        console.error("خطا در دریافت اطلاعات:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-        showError("خطا در دریافت اطلاعات محصول یا گارانتی");
-      } finally {
-        setLoading((prev) => ({ ...prev, product: false, guarantee: false }));
-      }
+  // تابع اعتبارسنجی جداگانه
+  const validateForm = (data) => {
+    const newErrors = {
+      name: null,
+      duration: null,
+      price_increase: null,
     };
+    if (!data.name.trim()) newErrors.name = "نام گارانتی الزامی است";
+    else if (data.name.trim().length < 3) newErrors.name = "نام گارانتی باید حداقل 3 کاراکتر باشد";
+    if (data.duration === "" || isNaN(data.duration) || Number(data.duration) <= 0)
+      newErrors.duration = "مدت گارانتی باید عدد مثبت باشد";
+    if (data.price_increase === "" || isNaN(data.price_increase) || Number(data.price_increase) < 0)
+      newErrors.price_increase = "افزایش قیمت باید عدد صفر یا مثبت باشد";
+    return newErrors;
+  };
 
-    fetchData();
-  }, [productId, guaranteeId]);
+  // اجرای اعتبارسنجی با تغییر formData
+  useEffect(() => {
+    const validationErrors = validateForm(formData);
+    setErrors(validationErrors);
+    console.log("خطاهای اعتبارسنجی:", validationErrors); // دیباگ
+  }, [formData]);
+
+  // بررسی معتبر بودن فرم برای فعال‌سازی دکمه
+  const isFormValid = () =>
+    formData.name.trim().length >= 3 &&
+    !isNaN(formData.duration) && Number(formData.duration) > 0 &&
+    !isNaN(formData.price_increase) && Number(formData.price_increase) >= 0;
+
+  // دریافت محصول با useQuery
+  const {
+    data: product,
+    isLoading: isProductLoading,
+    error: productError,
+  } = useQuery({
+    queryKey: ["product", productId],
+    queryFn: async () => {
+      const response = await getProduct(productId);
+      console.log("پاسخ getProduct:", response.data); // دیباگ
+      return response.data.data || {};
+    },
+    onError: (error) => {
+      console.error("خطا در دریافت محصول:", error);
+      showError(error.response?.data?.error || "خطا در دریافت اطلاعات محصول");
+    },
+  });
+
+  // دریافت گارانتی با useQuery
+  const {
+    data: guarantee,
+    isLoading: isGuaranteeLoading,
+    error: guaranteeError,
+  } = useQuery({
+    queryKey: ["guarantee", guaranteeId, productId],
+    queryFn: async () => {
+      const response = await getGuarantee(guaranteeId, productId);
+      console.log("پاسخ getGuarantee:", response.data); // دیباگ
+      const guaranteeData = response.data.data || {};
+      return {
+        name: guaranteeData.name || "",
+        duration: guaranteeData.duration || "",
+        price_increase: guaranteeData.price_increase || "",
+      };
+    },
+    onError: (error) => {
+      console.error("خطا در دریافت گارانتی:", error);
+      showError(error.response?.data?.error || "خطا در دریافت اطلاعات گارانتی");
+    },
+  });
+
+
+    useEffect(()=>{
+          if(guarantee){
+              setFormData(guarantee);
+          }
+      },[guarantee])
+  
+
+  // به‌روزرسانی گارانتی با useMutation
+  const mutation = useMutation({
+    mutationFn: (payload) => updateGuarantee(guaranteeId, productId, payload),
+    onSuccess: (response) => {
+      showSuccess(response.data.message || "گارانتی با موفقیت ویرایش شد");
+      queryClient.invalidateQueries(["guarantees", productId]);
+      navigate(`/admin/market/guarantees/${productId}`);
+    },
+    onError: (error) => {
+      console.error("خطا در ویرایش گارانتی:", error);
+      if (error.response?.status === 422) {
+        showError("فیلدها نامعتبر هستند");
+        const validationErrors = error.response.data.errors || {};
+        setErrors(
+          Object.keys(validationErrors).reduce(
+            (acc, key) => ({
+              ...acc,
+              [key]: Array.isArray(validationErrors[key])
+                ? validationErrors[key][0]
+                : validationErrors[key],
+            }),
+            { name: null, duration: null, price_increase: null }
+          )
+        );
+      } else {
+        showError(error.response?.data?.error || "ویرایش گارانتی با خطا مواجه شد");
+      }
+    },
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`تغییر ورودی: ${name} = ${value}`); // دیباگ
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "نام گارانتی الزامی است";
-    if (formData.duration === "" || isNaN(formData.duration) || Number(formData.duration) <= 0)
-      newErrors.duration = "مدت گارانتی باید عدد مثبت باشد";
-   if (formData.price_increase === "" || isNaN(formData.price_increase) || Number(formData.price_increase) < 0)
-    newErrors.price_increase = "افزایش قیمت باید عدد صفر یا مثبت باشد";
-    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
+    const validationErrors = validateForm(formData);
+    if (Object.values(validationErrors).some((error) => error)) {
       setErrors(validationErrors);
+      showError("لطفاً خطاهای فرم را برطرف کنید");
       return;
     }
 
@@ -93,28 +149,8 @@ function EditGuarantee() {
       duration: formData.duration,
       price_increase: formData.price_increase,
     };
-    console.log("داده‌های خام فرم:", formData);
-    console.log("داده‌های ارسالی به API:", payload);
-
-    setLoading((prev) => ({ ...prev, form: true }));
-    try {
-      await updateGuarantee(guaranteeId, productId, payload);
-      showSuccess("گارانتی با موفقیت ویرایش شد");
-      navigate(`/admin/market/guarantees/${productId}`);
-    } catch (error) {
-      console.error("خطا در ویرایش گارانتی:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      if (error.response?.status === 422) {
-        showError(error.response.data.error || "داده‌های ارسالی نامعتبر است");
-      } else {
-        showError("ویرایش گارانتی با خطا مواجه شد");
-      }
-    } finally {
-      setLoading((prev) => ({ ...prev, form: false }));
-    }
+    console.log("داده‌های ارسالی به API:", payload); // دیباگ
+    mutation.mutate(payload);
   };
 
   return (
@@ -123,7 +159,7 @@ function EditGuarantee() {
         <section className="main-body-container">
           <section className="main-body-container-header">
             <h5>
-              ویرایش گارانتی برای محصول: {loading.product ? "در حال بارگذاری..." : product?.name || "محصول"}
+              ویرایش گارانتی برای محصول: {isProductLoading ? "در حال بارگذاری..." : product?.name || "محصول"}
             </h5>
           </section>
 
@@ -136,8 +172,20 @@ function EditGuarantee() {
           </section>
 
           <section>
-            {loading.guarantee ? (
-              <div>در حال بارگذاری اطلاعات گارانتی...</div>
+            {(isGuaranteeLoading || productError || guaranteeError) ? (
+              <div className="text-center my-4">
+                {isGuaranteeLoading ? (
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">در حال بارگذاری...</span>
+                  </div>
+                ) : (
+                  <div className="alert alert-danger">
+                    {productError?.response?.data?.error ||
+                      guaranteeError?.response?.data?.error ||
+                      "خطا در دریافت اطلاعات محصول یا گارانتی"}
+                  </div>
+                )}
+              </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <section className="row">
@@ -151,7 +199,7 @@ function EditGuarantee() {
                         onChange={handleChange}
                         className={`form-control form-control-sm ${errors.name ? "is-invalid" : ""}`}
                       />
-                      {errors.name && <div style={styles.error}>{errors.name}</div>}
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
                   </section>
 
@@ -166,7 +214,7 @@ function EditGuarantee() {
                         className={`form-control form-control-sm ${errors.duration ? "is-invalid" : ""}`}
                         min="1"
                       />
-                      {errors.duration && <div style={styles.error}>{errors.duration}</div>}
+                      {errors.duration && <div className="invalid-feedback">{errors.duration}</div>}
                     </div>
                   </section>
 
@@ -181,7 +229,7 @@ function EditGuarantee() {
                         className={`form-control form-control-sm ${errors.price_increase ? "is-invalid" : ""}`}
                         min="0"
                       />
-                      {errors.price_increase && <div style={styles.error}>{errors.price_increase}</div>}
+                      {errors.price_increase && <div className="invalid-feedback">{errors.price_increase}</div>}
                     </div>
                   </section>
 
@@ -189,10 +237,15 @@ function EditGuarantee() {
                     <button
                       type="submit"
                       className="btn btn-primary btn-sm"
-                      disabled={loading.form}
+                      disabled={mutation.isPending || !isFormValid()}
                     >
-                      {loading.form ? "در حال ثبت..." : "ثبت تغییرات"}
+                      {mutation.isPending ? "در حال ثبت..." : "ثبت تغییرات"}
                     </button>
+                    {mutation.isError && (
+                      <div className="alert alert-danger mt-2">
+                        {mutation.error.response?.data?.error || "ویرایش گارانتی با خطا مواجه شد"}
+                      </div>
+                    )}
                   </section>
                 </section>
               </form>

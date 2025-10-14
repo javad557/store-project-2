@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Select from "react-select";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
@@ -21,52 +22,103 @@ const styles = {
 };
 
 function AddAmazingSale() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     product_id: null,
     amount: "",
     end_date: null,
     end_date_server: "",
   });
-  const [products, setProducts] = useState([]);
   const [errors, setErrors] = useState({
     form: null,
     product_id: null,
     amount: null,
     end_date: null,
   });
-  const [loading, setLoading] = useState({
-    form: false,
-    products: true,
+
+  // دریافت لیست محصولات با useQuery
+  const { data: products = [], isLoading: isProductsLoading } = useQuery({
+    queryKey: ["productsForSelect"], // کلید متفاوت برای جلوگیری از تداخل
+    queryFn: async () => {
+      const response = await getProducts();
+      const rawProducts = Array.isArray(response.data.data) ? response.data.data : [];
+      return rawProducts.map((product) => ({
+        value: product.id,
+        label: product.name,
+      }));
+    },
+    onError: (error) => {
+      console.log("Error in fetchProducts:", error.response);
+      const errorMessage = error.response?.data?.error || "خطا در دریافت لیست محصولات";
+      showError(errorMessage);
+      setErrors((prev) => ({ ...prev, products: "سرویس محصولات در دسترس نیست" }));
+    },
   });
-  const navigate = useNavigate();
 
-  // دریافت لیست محصولات
+  // اعتبارسنجی سمت کلاینت با useEffect
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await getProducts();
-        const productOptions = response.data.map((product) => ({
-          value: product.id,
-          label: product.name,
-        }));
-        setProducts(productOptions);
-      } catch (error) {
-        console.error("خطا در دریافت محصولات:", error);
-        setErrors((prev) => ({ ...prev, products: "سرویس محصولات در دسترس نیست" }));
-        showError("خطا در دریافت لیست محصولات");
-      } finally {
-        setLoading((prev) => ({ ...prev, products: false }));
+    const newErrors = { form: null, product_id: null, amount: null, end_date: null };
+
+    // اعتبارسنجی product_id
+    if (!formData.product_id) {
+      newErrors.product_id = "انتخاب محصول الزامی است";
+    }
+
+    // اعتبارسنجی amount
+    if (!formData.amount) {
+      newErrors.amount = "مقدار تخفیف الزامی است";
+    } else if (isNaN(formData.amount)) {
+      newErrors.amount = "مقدار تخفیف باید یک عدد معتبر باشد";
+    }
+
+    // اعتبارسنجی end_date
+    if (!formData.end_date_server) {
+      newErrors.end_date = "تاریخ پایان الزامی است";
+    } else {
+      const selectedDate = new Date(formData.end_date_server);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        newErrors.end_date = "تاریخ پایان نمی‌تواند در گذشته باشد";
       }
-    };
+    }
 
-    fetchProducts();
-  }, []);
+    setErrors(newErrors);
+  }, [formData]);
 
-  // مدیریت تغییرات ورودی‌ها
+  // افزودن فروش شگفت‌انگیز با useMutation
+  const addMutation = useMutation({
+    mutationFn: addAmazingSale,
+    onSuccess: (response) => {
+      showSuccess(response.data?.message || "فروش شگفت‌انگیز با موفقیت اضافه شد");
+      queryClient.invalidateQueries(["amazingSales"]);
+      navigate("/admin/marketing/amazings");
+    },
+    onError: (error) => {
+      console.log("Error in addAmazingSale:", error.response);
+      const errorData = error.response?.data;
+      let errorMessage = errorData?.error || errorData?.message || "خطا در افزودن فروش شگفت‌انگیز";
+
+      if (errorData?.errors) {
+        const serverErrors = { form: "مقادیر فیلدها معتبر نیستند" };
+        Object.keys(errorData.errors).forEach((key) => {
+          serverErrors[key] = errorData.errors[key][0];
+        });
+        setErrors(serverErrors);
+        errorMessage = "مقادیر فیلدها معتبر نیستند";
+      } else {
+        setErrors((prev) => ({ ...prev, form: errorMessage }));
+      }
+
+      showError(errorMessage);
+    },
+  });
+
+  // مدیریت تغییرات ورودی درصد تخفیف
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
   // مدیریت انتخاب محصول
@@ -75,62 +127,32 @@ function AddAmazingSale() {
       ...prev,
       product_id: selectedOption ? selectedOption.value : null,
     }));
-    setErrors((prev) => ({ ...prev, product_id: null }));
   };
 
   // مدیریت انتخاب تاریخ
   const handleDateChange = (date) => {
-    if (date) {
-      const formattedDate = date.toDate().toISOString().split("T")[0]; // فرمت YYYY-MM-DD
-      setFormData((prev) => ({
-        ...prev,
-        end_date: date,
-        end_date_server: formattedDate,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        end_date: null,
-        end_date_server: "",
-      }));
-    }
-    setErrors((prev) => ({ ...prev, end_date: null }));
+    setFormData((prev) => ({
+      ...prev,
+      end_date: date,
+      end_date_server: date ? date.toDate().toISOString().split("T")[0] : "",
+    }));
   };
 
   // ارسال فرم
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading((prev) => ({ ...prev, form: true }));
+    if (errors.product_id || errors.amount || errors.end_date) {
+      setErrors((prev) => ({ ...prev, form: "مقادیر فیلدها معتبر نیستند" }));
+      showError("مقادیر فیلدها معتبر نیستند");
+      return;
+    }
 
     const payload = {
       product_id: formData.product_id,
       amount: formData.amount ? Number(formData.amount) : null,
-      end_date: formData.end_date_server || null, // ارسال null اگر تاریخ خالی باشد
+      end_date: formData.end_date_server || null,
     };
-
-    try {
-      const response = await addAmazingSale(payload);
-      showSuccess(response.data.message || "فروش شگفت‌انگیز با موفقیت اضافه شد");
-      navigate("/admin/marketing/amazings");
-    } catch (error) {
-      console.error("خطا در افزودن فروش شگفت‌انگیز:", error);
-      const errorData = error.response?.data;
-      let errorMessage = errorData?.message || errorData?.error || "خطا در افزودن فروش شگفت‌انگیز";
-
-      // مدیریت خطاهای اعتبارسنجی از سرور
-      if (errorData?.errors) {
-        const serverErrors = {};
-        Object.keys(errorData.errors).forEach((key) => {
-          serverErrors[key] = errorData.errors[key][0]; // اولین پیام خطا
-        });
-        setErrors((prev) => ({ ...prev, ...serverErrors }));
-        errorMessage = "لطفاً خطاهای فرم را بررسی کنید.";
-      }
-
-      showError(errorMessage);
-    } finally {
-      setLoading((prev) => ({ ...prev, form: false }));
-    }
+    addMutation.mutate(payload);
   };
 
   return (
@@ -184,7 +206,7 @@ function AddAmazingSale() {
                       onChange={handleProductChange}
                       placeholder="جستجوی محصول..."
                       isClearable
-                      isLoading={loading.products}
+                      isLoading={isProductsLoading}
                       className={errors.product_id ? "is-invalid" : ""}
                     />
                     {errors.product_id && (
@@ -195,7 +217,7 @@ function AddAmazingSale() {
 
                 <section className="col-12 col-md-6">
                   <div className="form-group">
-                    <label htmlFor="amount">درصد تخفیف</label>
+                    <label htmlFor="amount">مقدار تخفیف</label>
                     <input
                       type="number"
                       name="amount"
@@ -236,9 +258,9 @@ function AddAmazingSale() {
                   <button
                     type="submit"
                     className="btn btn-success btn-sm"
-                    disabled={loading.form}
+                    disabled={addMutation.isLoading}
                   >
-                    {loading.form ? "در حال ثبت..." : "تأیید"}
+                    {addMutation.isLoading ? "در حال ثبت..." : "تأیید"}
                   </button>
                   {errors.form && (
                     <div className="text-danger mt-2">{errors.form}</div>

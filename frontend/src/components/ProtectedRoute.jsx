@@ -1,11 +1,15 @@
 // src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
 import { showError } from "../utils/notifications";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 const ProtectedRoute = ({ children, requiredPermission }) => {
-  const { user, loading } = useAuth();
+
+  const { user, loading } = useAdminAuth();
+
+
+
   const token = localStorage.getItem("auth_token");
 
   // اگر در حال لودینگ هستیم و توکن وجود داره، اسپینر نشون بده
@@ -25,14 +29,14 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
     return <Navigate to="/auth/loginregister" replace />;
   }
 
-  // اگر پرمیشن لازم وجود داره و کاربر اون پرمیشن رو نداره، پیام توست و خطا نشون بده
+  // // اگر پرمیشن لازم وجود داره و کاربر اون پرمیشن رو نداره، پیام توست و خطا نشون بده
   if (requiredPermission && user && !user.all_permissions.includes(requiredPermission)) {
     showError("شما مجوز لازم برای ورود به این بخش را ندارید");
 
     return <div>شما مجوز لازم برای دسترسی به این بخش را ندارید.</div>;
   }
 
-  // اگر همه‌چیز اوکیه، کامپوننت فرزند رو رندر کن
+  // // اگر همه‌چیز اوکیه، کامپوننت فرزند رو رندر کن
   return children;
 };
 

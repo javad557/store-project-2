@@ -36,17 +36,6 @@ class AuthController extends Controller
 public function sendOtp(Request $request)
 {
     $authHeader = $request->header('Authorization', 'هدر Authorization ارسال نشده');
-        Log::info('Authorization Header', [
-            'url' => $request->fullUrl(),
-            'method' => $request->method(),
-            'authorization' => $authHeader,
-        ]);
-    // لاگ اولیه مقادیر
-    Log::info('sendOtp request received', [
-        'identifier' => $request->input('identifier'),
-        'fingerprint' => $request->input('fingerprint'),
-    ]);
-
     // اعتبارسنجی اولیه مقادیر
     $validator = Validator::make($request->all(), [
         'identifier' => [
@@ -64,7 +53,6 @@ public function sendOtp(Request $request)
     ]);
 
     if ($validator->fails()) {
-        Log::warning('Validation failed', ['errors' => $validator->errors()->toArray()]);
         return response()->json([
             'error' => $validator->errors()->first()
         ], 422);
@@ -78,7 +66,6 @@ public function sendOtp(Request $request)
 
     // بررسی وجود تنظیمات
     if (!$settings) {
-        Log::error('Settings not found');
         return response()->json(['error' => 'خطا در بارگذاری تنظیمات سیستم'], 500);
     }
 
@@ -95,11 +82,6 @@ public function sendOtp(Request $request)
     // بررسی بلاک بودن دستگاه
     if ($attempt->blocked_until && Carbon::now()->lessThan($attempt->blocked_until)) {
         $remainingTime = Carbon::now()->diffInHours($attempt->blocked_until);
-        Log::warning('Device is blocked', [
-            'system_info' => $fingerprint,
-            'identifier' => $identifier,
-            'remaining_time' => $remainingTime,
-        ]);
         return response()->json([
             'error' => str_replace('{lockout_hours}', $remainingTime, $settings['too_many_attempts_error']),
         ], 429);
@@ -135,11 +117,6 @@ public function sendOtp(Request $request)
     if ($attempt->attempt_count > $settings->max_attempts_per_identifier) {
         $attempt->blocked_until = Carbon::now()->addHours(24);
         $attempt->save();
-        Log::warning('Device blocked due to too many attempts', [
-            'fingerprint' => $fingerprint,
-            'identifier' => $identifier,
-            'attempts' => $attempt->attempt_count,
-        ]);
         return response()->json([
             'error' => str_replace('{lockout_hours}', 24, $settings['too_many_attempts_error']),
         ], 429);
@@ -173,8 +150,9 @@ public function sendOtp(Request $request)
 }
 
 
-    public function resendOtp(Request $request)
-    {
+public function resendOtp(Request $request)
+{
+    Log::info('resenttest',['resenttest'=>'yes']);
         // اعتبارسنجی اولیه
         $validator = Validator::make($request->all(), [
             'otp_token' => ['required', 'string'],
@@ -195,14 +173,12 @@ public function sendOtp(Request $request)
         $otp = Otp::where('token', $otpToken)->first();
 
         if (!$otp) {
-            Log::warning('OTP token not found', ['otp_token' => $otpToken]);
             return response()->json(['error' => 'توکن OTP نامعتبر است'], 404);
         }
 
         $user = User::find($otp->user_id);
 
         if (!$user) {
-            Log::warning('User not found for OTP token', ['otp_token' => $otpToken]);
             return response()->json(['error' => 'کاربر یافت نشد'], 404);
         }
 
@@ -235,8 +211,8 @@ public function sendOtp(Request $request)
     }
 
 
-     public function verifyOtp(Request $request)
-    {
+public function verifyOtp(Request $request)
+{
        
         $otpToken = $request->input('otp_token');
         $otp = $request->input('otp');
@@ -247,13 +223,11 @@ public function sendOtp(Request $request)
             ->first();
 
         if (!$otpRecord) {
-            Log::warning('Invalid or used OTP token', ['otp_token' => $otpToken]);
             return response()->json(['error' => 'توکن OTP نامعتبر یا استفاده‌شده است'], 404);
         }
 
         // بررسی انقضای OTP
         if (Carbon::now()->greaterThan($otpRecord->expires_at)) {
-            Log::warning('OTP expired', ['otp_token' => $otpToken]);
             return response()->json(['error' => 'کد OTP منقضی شده است'], 410);
         }
 
@@ -261,7 +235,6 @@ public function sendOtp(Request $request)
         $user = User::find($otpRecord->user_id);
 
         if (!$user) {
-            Log::warning('User not found for OTP', ['otp_token' => $otpToken]);
             return response()->json(['error' => 'کاربر یافت نشد'], 404);
         }
 
@@ -277,10 +250,6 @@ public function sendOtp(Request $request)
             // علامت‌گذاری رمز یک‌بارمصرف به عنوان استفاده‌شده
             $recoveryOtp->used = true;
             $recoveryOtp->save();
-            Log::info('Recovery OTP verified successfully', [
-                'user_id' => $user->id,
-                'recovery_token' => $otp,
-            ]);
         }
         else{
               // ثبت تلاش ناموفق
@@ -313,7 +282,6 @@ public function sendOtp(Request $request)
                    'user_id' => $user->id,
                    'attempt_type' => 'otp',
                 ]);
-                Log::info('Old otp failed attempts cleared', ['user_id' => $user->id]);
             }
 
             // شمارش تلاش‌های ناموفق در بازه زمانی
@@ -330,11 +298,6 @@ public function sendOtp(Request $request)
                     'blocked_until' => Carbon::now()->addHours($blockDurationHours),
                 ]);
                 
-                Log::warning('User blocked due to too many failed otp attempts', [
-                    'user_id' => $user->id,
-                    'failed_attempts' => $failedAttempts,
-                ]);
-
                 $remainingTimeInHour = Carbon::now()->diffInHours($user->blocked_until);
                 $remainingTimeInMinute = Carbon::now()->diffInMinutes($user->blocked_until);
                 $errorMessage = $remainingTimeInHour > 0
@@ -346,13 +309,7 @@ public function sendOtp(Request $request)
             ], 429);
             }
 
-            Log::warning('Invalid 2FA code', [
-                'user_id' => $user->id,
-                'two_factor_code' => $otp,
-            ]);
-
             $errorMessage = $settings->otp_error_message . "  تعداد تلاش های باقیمانده : " . $maxAttempts-$failedAttempts;
-            Log::warning('Invalid OTP code', ['otp_token' => $otpToken]);
             return response()->json(['error' => $errorMessage], 401);
         }
         }
@@ -368,7 +325,6 @@ public function sendOtp(Request $request)
   // بررسی نوع ایدی و وضعیت تأیید
         $idType = $user->id_type === 0 ? 'email_veryfied_at' : ($user->id_type === 1 ? 'mobile_veryfied_at' : null);
         if ($idType === null) {
-            Log::error('Invalid id_type for user', ['user_id' => $user->id, 'id_type' => $user->id_type]);
             return response()->json(['error' => 'نوع ایدی نامعتبر است'], 400);
         }
 
@@ -397,12 +353,6 @@ public function sendOtp(Request $request)
                 ]);
             }
 
-            Log::info('OTP verified, user registered, recovery codes generated', [
-                'user_id' => $user->id,
-                'otp_token' => $request->otp_token,
-                'id_type' => $idType,
-            ]);
-
             return response()->json([
                 'message' => 'ثبت‌نام با موفقیت تکمیل شد، به صفحه رمزهای یک‌بارمصرف هدایت می‌شوید',
                 'redirect_to' => 'recovery_codes',
@@ -412,7 +362,6 @@ public function sendOtp(Request $request)
 
        // بررسی ورود دو مرحله‌ای
     if ($user->two_factor_enabled === 1) {
-        Log::info('2FA required for user', ['user_id' => $user->id]);
         return response()->json([
             'message' => 'ورود دو مرحله‌ای مورد نیاز است',
             'redirect_to' => 'two_factor',
@@ -420,10 +369,9 @@ public function sendOtp(Request $request)
     }
 
     // اجرای متد لاگین در صورت غیرفعال بودن 2FA
-    Log::info('Proceeding with login for user without 2FA', ['user_id' => $user->id]);
-   $loginRequest = Request::create('/api/auth/login', 'POST', ['otp_token' => $otpToken]);
-return $this->login($loginRequest);
-    }
+         $loginRequest = Request::create('/api/auth/login', 'POST', ['otp_token' => $otpToken]);
+         return $this->login($loginRequest);
+         }
 
 
     public function getRecoveryCodes(Request $request)
@@ -448,11 +396,8 @@ return $this->login($loginRequest);
             ->pluck('token'); // استفاده از ستون token به‌جای raw_token
 
         if ($recoveryCodes->isEmpty()) {
-            Log::warning('No recovery codes found for user', ['user_id' => $otpRecord->user_id]);
             return response()->json(['error' => 'رمزهای یک‌بارمصرف یافت نشد'], 404);
         }
-
-        Log::info('Recovery codes retrieved', ['user_id' => $otpRecord->user_id, 'otp_token' => $request->otp_token]);
 
         return response()->json([
             'message' => 'رمزهای یک‌بارمصرف با موفقیت دریافت شدند',
@@ -461,7 +406,7 @@ return $this->login($loginRequest);
     }
 
 
-        public function verifyTwoFactor(Request $request)
+    public function verifyTwoFactor(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'otp_token' => 'required|string',
@@ -487,7 +432,6 @@ return $this->login($loginRequest);
             return response()->json(['error' => 'کاربر یافت نشد'], 404);
         }
 
-        Log::info('2FAtest',['user'=>$user->id,'token'=>$otpToken,'2facode'=>$twoFactorCode]);
         // بررسی کد دو عاملی
         $isValid = $this->google2fa->verifyKey($user->two_factor_secret, $twoFactorCode);
         if (!$isValid) {
@@ -524,7 +468,6 @@ return $this->login($loginRequest);
                    'attempt_type' => 'two_factor',
                    'ip_address' => $request->ip(),
                 ]);
-                Log::info('Old 2FA failed attempts cleared', ['user_id' => $user->id]);
             }
 
             // شمارش تلاش‌های ناموفق در بازه زمانی
@@ -539,10 +482,6 @@ return $this->login($loginRequest);
                     'is_blocked' => true,
                     'blocked_until' => Carbon::now()->addHours($blockDurationHours),
                 ]);
-                Log::warning('User blocked due to too many failed 2FA attempts', [
-                    'user_id' => $user->id,
-                    'failed_attempts' => $failedAttempts,
-                ]);
 
                 $remainingTimeInHour = Carbon::now()->diffInHours($user->blocked_until);
                 $remainingTimeInMinute = Carbon::now()->diffInMinutes($user->blocked_until);
@@ -553,11 +492,6 @@ return $this->login($loginRequest);
                     'error' => $errorMessage
             ], 429);
             }
-
-            Log::warning('Invalid 2FA code', [
-                'user_id' => $user->id,
-                'two_factor_code' => $twoFactorCode,
-            ]);
 
              $errorMessage = $settings->twofa_error_message . "  تعداد تلاش های باقیمانده : " . $maxAttempts-$failedAttempts;
 
@@ -588,7 +522,6 @@ return $this->login($loginRequest);
         try {
             // تولید توکن JWT
             $authToken = JWTAuth::fromUser($user);
-            Log::info('logintest',['logintest'=>$authToken]);
 
             // پاسخ به فرانت‌اند
             return response()->json([
@@ -630,9 +563,6 @@ public function logout(Request $request)
             'message' => 'توکن نامعتبر است',
         ], 401);
     } catch (\Exception $e) {
-        Log::error('Error during logout: ' . $e->getMessage(), [
-            'stack' => $e->getTraceAsString(),
-        ]);
         return response()->json([
             'message' => 'خطا در خروج از سیستم',
             'error' => $e->getMessage(),
