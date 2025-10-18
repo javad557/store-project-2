@@ -3,8 +3,7 @@ import AdminHeader from "../components/AdminHeader";
 import AdminSidebar from "../components/AdminSidebar";
 import { useState } from "react";
 import "../styles/admin.css";
-import { useQuery } from "@tanstack/react-query";
-import { getUser } from "../services/user/adminService"; // فرض می‌کنم این سرویس برای دریافت کاربر است
+
 
 function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

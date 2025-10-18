@@ -62,6 +62,7 @@ import AddCategoryTicket from "./admin/pages/ticket/category/AddCategoryTicket.j
 import PriorityTickets from "./admin/pages/ticket/priority/PriorityTickets.jsx";
 import AddPriorityTicket from "./admin/pages/ticket/priority/AddPriorityTicket.jsx";
 import { AdminAuthProvider } from "./context/AdminAuthContext.jsx";
+import { UserAuthProvider } from "./context/UserAuthContext.jsx";
 
 function App() {
   return (
@@ -144,7 +145,14 @@ function App() {
           </Route>
         </Route>
         <Route path="*" element={<div>404 - صفحه پیدا نشد</div>} />
-      </Routes>
+      
+
+
+        {/* روت‌های مشتری با والد userAuthProvider */}
+       <Route path="/main" element={<UserAuthProvider />}>
+        <Route path="home" element={<Home />} />
+       </Route>
+       </Routes>
     </Router>
   );
 }
