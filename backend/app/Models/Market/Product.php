@@ -84,4 +84,9 @@ public function ratingSummary()
 {
     return $this->hasOne(ProductRatingSummary::class);
 }
+
+ public function mainImage()
+    {
+        return $this->hasOne(Gallery::class)->where('is_main', 1);
+    }
 }

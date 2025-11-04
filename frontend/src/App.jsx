@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MainLayout from "./main/layouts/MainLayout";
-import AdminLayout from "./admin/layouts/AdminLayout";
 import Home from "./main/pages/Home";
 import Dashboard from "./admin/pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -61,8 +60,31 @@ import CategoryTickets from "./admin/pages/ticket/category/CategoryTickets.jsx";
 import AddCategoryTicket from "./admin/pages/ticket/category/AddCategoryTicket.jsx";
 import PriorityTickets from "./admin/pages/ticket/priority/PriorityTickets.jsx";
 import AddPriorityTicket from "./admin/pages/ticket/priority/AddPriorityTicket.jsx";
-import { AdminAuthProvider } from "./context/AdminAuthContext.jsx";
-import { UserAuthProvider } from "./context/UserAuthContext.jsx";
+import {AuthProvider } from "./context/AuthContext.jsx";
+import MyAddresses from "./main/pages/profile/MyAddresses.jsx";
+import MyComparison from "./main/pages/profile/MyComparison.jsx";
+import MyFavorites from "./main/pages/profile/MyFavorites.jsx";
+import MyOrders from "./main/pages/profile/MyOrders.jsx";
+import MyProfile from "./main/pages/profile/MyProfile.jsx";
+import MyTickets from "./main/pages/profile/tickets/MyTickets.jsx";
+import Product from "./main/pages/market/product.jsx";
+import AllProducts from "./main/pages/market/products.jsx";
+import ChooseAddressAndDelivery from "./main/pages/cart/ChooseAddressAndDelivery.jsx";
+import Payment from "./main/pages/cart/payment.jsx";
+import ProfileComplition from "./main/pages/cart/ProfileComplition.jsx";
+import AddressEdit from "./main/pages/cart/addressEdit.jsx";
+import MainProfile from "./main/pages/profile/layouts/MainProfile.jsx";
+import AddAddress from "./main/pages/profile/AddAddress.jsx";
+import AddTicket from "./main/pages/profile/tickets/AddTicket.jsx";
+import ShowTicket from "./main/pages/profile/tickets/ShowTicket.jsx";
+import Cart from "./main/pages/cart/Cart.jsx";
+import InformationPages from "./main/pages/InformationPages.jsx";
+import EditProfile from "./main/pages/profile/EditProfile.jsx";
+import AdminLayout from "./admin/layouts/AdminLayout.jsx";
+import ProtectedMainRoute from "./components/ProtectedMainRoute";
+import MyOrderItems from "./main/pages/profile/MyOrderItems.jsx";
+import EditAddress from "./main/pages/profile/EditAddress.jsx";
+
 
 function App() {
   return (
@@ -81,8 +103,13 @@ function App() {
           <Route path="two-factor" element={<TwoFactorVerify />} />
         </Route>
 
-        {/* روت‌های ادمین با والد AdminAuthProvider */}
-       <Route path="/admin" element={<AdminAuthProvider />}>
+       <Route path="/admin" element={
+        <AuthProvider isAdmin={true}>
+          <ProtectedRoute>
+              <AdminLayout/>
+          </ProtectedRoute>
+        </AuthProvider>
+        }>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="market">
@@ -149,9 +176,50 @@ function App() {
 
 
         {/* روت‌های مشتری با والد userAuthProvider */}
-       <Route path="/main" element={<UserAuthProvider />}>
+      <Route path="/main" element={
+        <AuthProvider>
+          <MainLayout/>
+        </AuthProvider>
+        }>
         <Route path="home" element={<Home />} />
-       </Route>
+        <Route path="profile" element={
+          <ProtectedMainRoute>
+              <MainProfile/>
+          </ProtectedMainRoute>
+          }>
+          <Route path="my-addresses" element={<MyAddresses/>}/>
+          <Route path="my-addresses/add" element={<AddAddress/>}/>
+          <Route path="my-addresses/edit/:id" element={<EditAddress/>}/>
+          <Route path="my-comparison" element={<MyComparison/>} />
+          <Route path="my-favorites" element={<MyFavorites/>} />
+          <Route path="my-orders" element={<MyOrders/>} />
+          <Route path="my_order_items/:id" element={<MyOrderItems/>} />
+          <Route path="my-profile" element={<MyProfile/>} />
+          <Route path="my-profile/edit" element={<EditProfile/>} />
+          <Route path="my-tickets" element={<MyTickets/>} />
+          <Route path="my-tickets/add" element={<AddTicket/>} />
+          <Route path="my-tickets/show/:id" element={<ShowTicket/>} />
+        </Route>
+        <Route path="market">
+          <Route path="products" element={<AllProducts/>}/>
+          <Route path="product/:id" element={<Product/>}/>
+        </Route>
+        <Route
+            path="cart"
+            element={
+              <ProtectedRoute>
+                <div>{/* این div برای جلوگیری از خطای رندر لازم است */}</div>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="cddressedit" element={<AddressEdit/>}/>
+            <Route path="chooseaddressanddelivery" element={<ChooseAddressAndDelivery/>}/>
+            <Route path="cart" element={<Cart/>}/>
+            <Route path="payment" element={<Payment/>}/>
+            <Route path="profilecomplition" element={<ProfileComplition/>}/>
+        </Route>
+         <Route path="informationpages/:id" element={<InformationPages />} />
+        </Route>
        </Routes>
     </Router>
   );

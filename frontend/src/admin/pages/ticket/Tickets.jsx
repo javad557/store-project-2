@@ -22,8 +22,6 @@ function Tickets() {
     },
   });
 
-  console.log(tickets);
-  
 
   const mutation = useMutation({
     mutationFn: changeStatus,
@@ -36,18 +34,6 @@ function Tickets() {
     },
   });
 
-  if (isSuccess) {
-    console.log("Tickets data:", tickets);
-    console.log(
-      "Ticket statuses:",
-      Array.isArray(tickets)
-        ? [...new Set(tickets.map((ticket) => ticket.status))]
-        : "Tickets is not an array"
-    );
-  }
-  if (isError) {
-    showError(error.response?.data?.error || "دریافت تیکت‌ها با خطا مواجه شد");
-  }
 
   const closeTicket = (ticketId) => {
     console.log("to closed");
@@ -149,7 +135,7 @@ function Tickets() {
                         <td>{ticket.title}</td>
                         <td>{ticket.category_ticket?.name || "نامشخص"}</td>
                         <td>{ticket.priority_ticket?.name || "نامشخص"}</td>
-                        <td>{ticket.has_unseen_child == true ? "unseen" : "seen"}</td>
+                        <td>{ticket.seen == 0 || ticket.has_unseen_child == true ? "unseen" : "seen"}</td>
                         <td>
                           <button
                             className={`btn btn-sm ${

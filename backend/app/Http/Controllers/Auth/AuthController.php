@@ -525,7 +525,7 @@ public function verifyOtp(Request $request)
 
             // پاسخ به فرانت‌اند
             return response()->json([
-                'message' => 'ورود با موفقیت انجام شد',
+                'message' => "$user->name عزیز خوش اومدی",
                 'auth_token' => $authToken,
                 'is_admin' => $user->is_admin,
             ], 200);

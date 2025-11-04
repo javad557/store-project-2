@@ -96,7 +96,7 @@ function OtpVerify() {
         // ذخیره توکن در localStorage
         localStorage.setItem("auth_token", response.data.auth_token);
         // هدایت به داشبورد مناسب بر اساس نقش کاربر
-        const redirectPath = response.data.is_admin ? "/admin/dashboard" : "/dashboard";
+        const redirectPath = response.data.is_admin ? "/admin/dashboard" : "/main/home";
         navigate(redirectPath);
       } else if (response.data.redirect_to) {
         const redirectPath = resolveRedirectPath(response.data.redirect_to);

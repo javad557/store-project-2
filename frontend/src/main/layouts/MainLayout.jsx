@@ -10,7 +10,10 @@ import "../styles/css/profile.css";
 import "../styles/css/bootstrap/bootstrap-reboot.rtl.min.css";
 import "../styles/css/bootstrap/bootstrap.rtl.min.css";
 import "../styles/fontawesome/css/all.min.css";
-
+import "../styles/fontawesome/css/all.min.css";
+import "../styles/fontawesome/css/all.min.css";
+import "../styles/fontawesome/css/all.min.css";
+import 'swiper/css';
 
 
 
@@ -20,9 +23,8 @@ function MainLayout() {
     <div className="" dir="rtl">
     <MainHeader/>
     
-    <main id="main-body-one-col" class="main-body">
+    <main id="main-body-one-col" className="main-body">
        <Outlet />
-
     </main>
     </div>
    

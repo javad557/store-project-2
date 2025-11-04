@@ -2,13 +2,11 @@
 import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { showError } from "../utils/notifications";
-import { useAdminAuth } from "../context/AdminAuthContext";
+import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, requiredPermission }) => {
+const ProtectedMainRoute = ({ children, requiredPermission }) => {
 
-  const { user, loading } = useAdminAuth();
-
-
+  const { user, loading } = useAuth();
 
   const token = localStorage.getItem("auth_token");
 
@@ -40,4 +38,4 @@ const ProtectedRoute = ({ children, requiredPermission }) => {
   return children;
 };
 
-export default ProtectedRoute;
+export default ProtectedMainRoute;

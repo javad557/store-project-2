@@ -1,136 +1,114 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { addTicket, getAllTickets, markTicketsAsSeen } from "../../services/ticketService"; // اضافه کردن markTicketsAsSeen
+import { addTicket, getRelatedTickets, markTicketsAsSeen } from "../../services/ticketService";
 import { showError, showSuccess } from "../../../utils/notifications";
-import { useRef, useState, useEffect } from "react"; // اضافه کردن useEffect
+import { useRef, useState, useEffect } from "react";
 
 function Ticket() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const ticketIdsRef = useRef([]); // برای ذخیره IDهای تیکت‌های نمایش‌داده‌شده
-
-  // دریافت همه تیکت‌ها
-  const { data: allTicketsData, isLoading, isError, error, isSuccess } = useQuery({
-    queryKey: ['allTicketsData'],
-    queryFn: () => getAllTickets(),
-  });
-
-  const mainTicket = isSuccess ? allTicketsData?.data?.data?.find(t => t.id === parseInt(id)) : null;
+  const ticketIdsRef = useRef([]);
   const lastTicketIdRef = useRef(id);
 
-  const [formData, setFormData] = useState({
-    parent_id: '',
-    title: '',
-    body: '',
-    category_id: '',
-    priority_id: '',
+  // دریافت تیکت‌های مرتبط
+  const { data, isLoading, isError, error, isSuccess } = useQuery({
+    queryKey: ["relatedTickets", id],
+    queryFn: () => getRelatedTickets(id),
   });
 
-  // Mutation برای افزودن تیکت
+  const tickets = isSuccess ? data?.data?.data?.tickets || [] : [];
+  const currentUserId = data?.data?.data?.current_user?.id;
+  const mainTicket = tickets.length > 0 ? tickets[0] : null;
+
+  const [formData, setFormData] = useState({
+    body: "",
+  });
+
+  // Mutation برای افزودن تیکت جدید
   const addTicketMutation = useMutation({
     mutationFn: addTicket,
     onSuccess: (response) => {
-      queryClient.invalidateQueries(['allTicketsData']);
+      queryClient.invalidateQueries(["relatedTickets", id]);
       showSuccess(response.data.message);
+      setFormData({ body: "" });
     },
     onError: (error) => {
-      const errorMessage = error.response?.data?.error || 'ارسال تیکت موفقیت آمیز نبود';
+      const errorMessage = error.response?.data?.error || "ارسال تیکت موفقیت‌آمیز نبود";
       showError(errorMessage);
       if (error.response?.status === 401) {
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
         queryClient.clear();
-        navigate('/auth/loginregister');
+        navigate("/auth/loginregister");
       }
-    }
+    },
   });
 
-  // Mutation جدید برای به‌روزرسانی seen
+  // Mutation برای seen
   const markSeenMutation = useMutation({
-    mutationFn: markTicketsAsSeen, // فرضاً تابع جدید در ticketService
-    onSuccess: () => {
-      queryClient.invalidateQueries(['allTicketsData']); // به‌روزرسانی کش
+    mutationFn: markTicketsAsSeen,
+    onSuccess:()=>{
+       queryClient.invalidateQueries(["newTickets"]);
     },
     onError: (error) => {
-      console.log(error);
-      
-      showError(error.response?.data?.error || 'خطا در به‌روزرسانی وضعیت seen');
-    }
+      showError(error.response?.data?.error || "خطا در به‌روزرسانی وضعیت دیده‌شده");
+    },
   });
 
-  // جمع‌آوری IDهای تیکت‌های نمایش‌داده‌شده و ارسال درخواست
- useEffect(() => {
-  if (isSuccess && mainTicket) {
-    const ticketIds = ticketIdsRef.current; // فقط IDها رو بگیر
-    console.log(ticketIds);
-    
-    if (ticketIds.length > 0) {
-      markSeenMutation.mutate(ticketIds); // ارسال مستقیم IDها به سرور
+  // بروزرسانی seen تیکت‌ها
+  useEffect(() => {
+    if (isSuccess && tickets.length > 0) {
+      const ids = tickets.map((t) => t.id);
+      ticketIdsRef.current = ids;
+      markSeenMutation.mutate(ids);
     }
-  }
-}, [isSuccess, mainTicket]); // وابستگی به isSuccess و mainTicket
+  }, [isSuccess, tickets]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      body: value,
-      parent_id: parseInt(lastTicketIdRef.current),
-      title: mainTicket?.title || '',
-      category_id: mainTicket?.category_id || '',
-      priority_id: mainTicket?.priority_id || '',
-    }));
+    setFormData({ body: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const lastTicket = tickets[tickets.length - 1];
     addTicketMutation.mutate({
-      parent_id: formData.parent_id,
-      title: formData.title,
+      parent_id: lastTicket.id,
+      title: mainTicket.title,
       body: formData.body,
-      category_id: formData.category_id,
-      priority_id: formData.priority_id,
+      category_id: mainTicket.category_id,
+      priority_id: mainTicket.priority_id,
     });
   };
 
   if (isError) {
-    showError(error.response?.data?.error || "دریافت تیکت‌ها با خطا مواجه شد");
+    showError(error.response?.data?.error || "خطا در دریافت اطلاعات تیکت");
   }
 
-  const answers = (parentId) => {
-    const allTickets = allTicketsData?.data?.data || [];
-    return allTickets.map((ticket) => {
-      if (ticket.parent_id == parentId) {
-        lastTicketIdRef.current = ticket.id;
-        // اضافه کردن ID تیکت به ticketIdsRef
-        if (!ticketIdsRef.current.includes(ticket.id)) {
-          ticketIdsRef.current.push(ticket.id);
-        }
-        return (
-          <section key={ticket.id} className="card-body">
-            <p>{ticket.user.full_name}</p>
-            <p className="card-text">{ticket.body}</p>
-            <hr />
-            {answers(ticket.id)}
-          </section>
-        );
-      }
-      return null;
-    }).filter(Boolean);
+  // استایل وضعیت دیده‌شده
+  const seenStatusStyle = {
+    color: "#28a745",
+    fontSize: "0.9rem",
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#e6f4ea",
+    padding: "2px 8px",
+    borderRadius: "12px",
   };
 
-  if (isSuccess && !mainTicket) {
-    return (
-      <div className="text-center my-4 text-danger">
-        تیکت مورد نظر یافت نشد.
-      </div>
-    );
-  }
+  const unseenStatusStyle = {
+    color: "#6c757d",
+    fontSize: "0.9rem",
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: "2px 8px",
+    borderRadius: "12px",
+  };
 
-  // اضافه کردن ID تیکت اصلی به ticketIdsRef
-  if (isSuccess && mainTicket && !ticketIdsRef.current.includes(mainTicket.id)) {
-    ticketIdsRef.current.push(mainTicket.id);
-  }
+  const iconStyle = {
+    fontSize: "1rem",
+    marginLeft: "4px",
+  };
 
   return (
     <section className="row">
@@ -142,54 +120,80 @@ function Ticket() {
               <span className="visually-hidden">در حال بارگذاری...</span>
             </div>
           </div>
-        ) : error ? (
-          <div className="text-center my-4 text-danger">
-            خطایی رخ داده است. لطفاً دوباره تلاش کنید.
-          </div>
-        ) : isSuccess ? (
-          <section className="main-body-container">
-            <section className="main-body-container-header">
-              <h5>نمایش تیکت ها</h5>
-            </section>
-
-            <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
-              <Link to="/admin/ticket/tickets" className="btn btn-info btn-sm">بازگشت</Link>
-            </section>
-
-            <section className="card mb-3">
-              <section className="card-header text-white bg-custom-pink">
-                <small>از: {mainTicket?.user?.full_name || 'نامشخص'} - {new Date(mainTicket?.created_at).toLocaleDateString('fa-IR')}</small>
+        ) : (
+          isSuccess && (
+            <section className="main-body-container">
+              <section className="main-body-container-header">
+                <h5>نمایش تیکت‌ها</h5>
               </section>
-              <section className="card-body">
-                <h5 className="card-title">موضوع: {mainTicket?.title}</h5>
-                <p className="card-text">{mainTicket?.body}</p>
+
+              <section className="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
+                <Link to="/admin/ticket/tickets" className="btn btn-info btn-sm">
+                  بازگشت
+                </Link>
               </section>
-            </section>
 
-            {answers(parseInt(id))}
+              {/* ✅ نمایش تمام تیکت‌ها به‌ترتیب */}
+              {tickets.map((ticket, index) => (
+                <section key={ticket.id} className="card mb-3">
+                  {/* فقط برای تیکت اصلی کادر قرمز */}
+                  <section
+                    className={`card-header ${
+                      index === 0 ? "text-white bg-custom-pink" : "bg-light"
+                    }`}
+                  >
+                    <small>
+                      از: {ticket.user?.full_name || "نامشخص"} -{" "}
+                      {new Date(ticket.created_at).toLocaleDateString("fa-IR")}
+                    </small>
+                  </section>
 
-            <section className="mt-4">
-              <form onSubmit={handleSubmit}>
-                <section className="row">
-                  <section className="col-12">
-                    <div className="form-group">
-                      <label htmlFor="">پاسخ تیکت</label>
-                      <textarea
-                        className="form-control form-control-sm"
-                        rows="4"
-                        name="body"
-                        onChange={handleChange}
-                      ></textarea>
-                      <section className="col-12 mt-2">
-                        <button className="btn btn-primary btn-sm">ثبت</button>
-                      </section>
-                    </div>
+                  <section className="card-body">
+                    {index === 0 && <h5 className="card-title">موضوع: {ticket.title}</h5>}
+                    <p className="card-text">{ticket.body}</p>
+
+                    {ticket.user_id == currentUserId && (
+                      <p className="card-text">
+                        {ticket.seen == 1 ? (
+                          <span style={seenStatusStyle}>
+                            <i className="bi bi-check-circle-fill" style={iconStyle}></i>دیده شده
+                          </span>
+                        ) : (
+                          <span style={unseenStatusStyle}>
+                            <i className="bi bi-eye-slash" style={iconStyle}></i>دیده نشده
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </section>
                 </section>
-              </form>
+              ))}
+
+              {/* فرم پاسخ */}
+              <section className="mt-4">
+                <form onSubmit={handleSubmit}>
+                  <section className="row">
+                    <section className="col-12">
+                      <div className="form-group">
+                        <label htmlFor="body">پاسخ تیکت</label>
+                        <textarea
+                          className="form-control form-control-sm"
+                          rows="4"
+                          name="body"
+                          value={formData.body}
+                          onChange={handleChange}
+                        ></textarea>
+                        <section className="col-12 mt-2">
+                          <button className="btn btn-primary btn-sm">ثبت</button>
+                        </section>
+                      </div>
+                    </section>
+                  </section>
+                </form>
+              </section>
             </section>
-          </section>
-        ) : null}
+          )
+        )}
       </section>
     </section>
   );

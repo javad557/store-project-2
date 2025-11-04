@@ -1,8 +1,13 @@
+/* تعریف فونت */
 @font-face {
   font-family: IRANSans;
-  src: url('../fonts/IRANSans/IRANSansWeb_Light.woff'),
-       url('../fonts/IRANSans/IRANSansWeb_Light.woff') format('truetype');
+  src: url('../fonts/IRANSans/IRANSansWeb_Light.woff') format('woff');
   font-weight: normal;
+}
+
+/* استایل‌های عمومی */
+:root {
+  --transition-default: 0.4s ease;
 }
 
 * {
@@ -11,22 +16,11 @@
   font-family: IRANSans;
 }
 
-/*
- -----------------------------------------------------------------------------------------------------------------------
- public styles
- -----------------------------------------------------------------------------------------------------------------------
-*/
-
 body {
   background-color: #f7f7f7;
 }
 
-/*
- -----------------------------------------------------------------------------------------------------------------------
- header
- -----------------------------------------------------------------------------------------------------------------------
-*/
-
+/* هدر */
 .main-header {
   box-shadow: 0 7px 8px 0 rgba(0,0,0,0.04);
   background-color: #FFFFFF;
@@ -36,10 +30,7 @@ body {
   border-bottom: 1px solid #efefef;
 }
 
-.top-nav {
-}
-
-/* start search */
+/* جستجو */
 .search-wrapper {
   position: relative;
   width: 50%;
@@ -82,7 +73,7 @@ body {
   outline: none;
   width: 100%;
   padding: 0.4rem 0rem;
-  background-color: rgba(0,0,0,0);
+  background-color: transparent;
 }
 
 .search-textbox input:focus {
@@ -94,6 +85,9 @@ body {
   height: 300px;
   padding: 0.5rem;
   overflow: auto;
+  background-color: #FFFFFF;
+  box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.1);
+  border-radius: 0.25rem;
 }
 
 .search-result-title {
@@ -123,7 +117,7 @@ body {
 
 .search-result-item:hover {
   background-color: rgba(0,0,0,0.05);
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .search-result-item a,
@@ -136,23 +130,52 @@ body {
   color: #999999;
 }
 
-/* end search */
+/* آیکون‌های هدر (کاربر و سبد خرید) */
+.header-icons {
+  display: inline-flex;
+  align-items: center;
+}
 
-/* start header profile link part */
-.profile-button {
+.profile-button,
+.header-cart-link {
   font-size: 1.2rem;
   border: none;
   box-shadow: none;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  transition: none !important;
+  text-decoration: none !important;
+  display: inline-block;
 }
 
+.profile-button:hover,
 .profile-button:focus,
-.profile-button:hover {
-  outline: none;
-  background-color: #f7f7f7;
-  border: none;
-  box-shadow: none;
+.header-cart-link:hover,
+.header-cart-link:focus {
+  background: transparent !important;
+  color: #000000 !important;
+  transform: none !important;
+  outline: none !important;
 }
 
+.header-icons .fa,
+.profile-button .fa,
+.header-cart-link .fa {
+  font-size: 1.2rem;
+  color: #000000 !important;
+  transition: none !important;
+}
+
+.header-icons .fa:hover,
+.profile-button .fa:hover,
+.header-cart-link .fa:hover {
+  color: #000000 !important;
+  transform: none !important;
+}
+
+/* دراپ‌داون پروفایل */
 .custom-drop-down {
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.1) !important;
   border-radius: 0.25rem !important;
@@ -170,27 +193,13 @@ body {
   font-size: 1rem;
 }
 
-/* end header profile link part */
-
-/* start cart */
-.header-cart-link {
-  font-size: 1.2rem;
-  border: none;
-  box-shadow: none;
-}
-
-.header-cart-link span {
+/* سبد خرید */
+.header-cart-link .badge {
   font-size: 0.5rem;
-  padding-top: 0.4rem;
-}
-
-.header-cart:hover .header-cart-link,
-.header-cart-link:focus,
-.header-cart-link:hover {
-  outline: none;
-  background-color: #f7f7f7;
-  border: none;
-  box-shadow: none;
+  padding: 0.2rem 0.4rem;
+  top: -5px;
+  right: -5px;
+  transition: none !important;
 }
 
 .header-cart-dropdown {
@@ -205,15 +214,12 @@ body {
   z-index: 9999;
   padding: 0.3rem;
   font-size: 0.8rem;
-}
-
-.header-cart {
+  border-radius: 0.25rem;
 }
 
 .header-cart:hover .header-cart-dropdown {
   visibility: visible;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.1);
-  border-radius: 0.25rem;
 }
 
 .header-cart-dropdown-body {
@@ -239,9 +245,7 @@ body {
   font-size: 0.7rem;
 }
 
-/* end cart */
-
-/* start super nav item */
+/* نوار ناوبری */
 .super-navbar-item {
   color: #333;
   font-size: 0.8rem;
@@ -250,7 +254,7 @@ body {
 
 .super-navbar-item:hover {
   border-bottom: 2px solid #ff253a;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .super-navbar-item-toggle {
@@ -271,7 +275,7 @@ body {
 .super-navbar-item:hover > .sublist-wrapper {
   visibility: visible;
   top: 100%;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .sublist-item-toggle {
@@ -287,7 +291,7 @@ body {
   background-color: rgba(255,255,255,1);
   border-right: 2px solid #ff253a;
   font-weight: bold;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .sublist-item-active > .sublist-item-toggle {
@@ -295,7 +299,7 @@ body {
   background-color: rgba(255,255,255,1);
   border-right: 2px solid #ff253a;
   font-weight: bold;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .sublist-item:first-of-type > .sublist-item-toggle {
@@ -341,7 +345,7 @@ body {
 
 .sub-category:hover {
   color: #00b5fe;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .sub-sub-category {
@@ -355,10 +359,10 @@ body {
 
 .sub-sub-category:hover {
   color: #ff253a;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
-/* navbar item */
+/* آیتم‌های نوار ناوبری */
 .navbar-item {
   color: #333;
   font-size: 0.8rem;
@@ -376,10 +380,10 @@ body {
 .navbar-item > a:hover {
   cursor: pointer;
   border-bottom: 2px solid #ff253a;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
-/* start slideshow */
+/* اسلایدر */
 #slideshow .owl-dots {
   position: absolute;
   margin-left: auto;
@@ -401,16 +405,16 @@ body {
   display: inline-block;
   background: #f7f7f7;
   margin: 0 0.2rem;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 #slideshow .owl-dots button.owl-dot.active span {
   width: 1.4rem;
   background-color: #000;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
-/* start lazy load */
+/* لود تنبل */
 .light-owl-nav .owl-nav .owl-prev {
   right: 0;
   position: absolute;
@@ -423,7 +427,7 @@ body {
   color: #000000 !important;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.2) !important;
   margin: 0 auto;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .light-owl-nav .owl-nav .owl-next {
@@ -438,7 +442,7 @@ body {
   color: #000000 !important;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.2) !important;
   margin: 0 auto;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .light-owl-nav .owl-nav .owl-prev:hover,
@@ -459,7 +463,7 @@ body {
   color: #FFFFFF !important;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.2) !important;
   margin: 0 auto;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .dark-owl-nav .owl-nav .owl-next {
@@ -474,16 +478,16 @@ body {
   color: #FFFFFF !important;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.2) !important;
   margin: 0 auto;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .dark-owl-nav .owl-nav .owl-prev:hover,
 .dark-owl-nav .owl-nav .owl-next:hover {
   background-color: rgba(0,0,0,0.95) !important;
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.4) !important;
-  transition: 0.4s;
 }
 
+/* محتوای عمومی */
 .content-wrapper {
   box-shadow: 0rem 0rem 0.2rem 0.1rem rgba(0,0,0,0.1);
 }
@@ -500,7 +504,7 @@ body {
   height: 100% !important;
 }
 
-/* start brand lazy load */
+/* برندها */
 .brand-part {
   background-color: #FFFFFF;
 }
@@ -516,7 +520,7 @@ body {
   max-width: 8rem !important;
 }
 
-/* header content */
+/* سربرگ محتوا */
 .content-header {
   border-bottom: 1px solid #efefef;
 }
@@ -542,12 +546,11 @@ body {
 }
 
 .content-header-link a:hover {
-  text-decoration: none;
   color: #111111;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
-/* product */
+/* محصولات */
 .product-wrapper {
 }
 
@@ -602,13 +605,12 @@ body {
   position: relative;
   border-radius: 0.25rem;
   background-color: #FFFFFF;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .product:hover {
   z-index: 99;
   box-shadow: 0rem 0rem 0.4rem 0.1rem rgba(0,0,0,0.1);
-  transition: 0.4s;
 }
 
 .product-link {
@@ -717,7 +719,7 @@ body {
   color: rgba(0,0,0,1);
   box-shadow: 0rem 0rem 0.4rem 0.1rem rgba(0,0,0,0.1);
   border-radius: 0.25rem;
-  transition: 0.4s;
+  transition: var(--transition-default);
 }
 
 .product-add-to-cart-active,
@@ -725,60 +727,40 @@ body {
   background-color: rgba(255,255,255, 1) !important;
   color: #ff253a !important;
   text-decoration: none;
-  transition: 0.4s;
 }
 
 .product-add-to-favorite {
-  position: absolute;
-  top: 2.6rem;
-  left: 0;
-  padding: 0.2rem;
+  position: relative;
+  z-index: 10;
 }
 
-.product-add-to-favorite a {
-  text-decoration: none;
-  background-color: rgba(255,255,255, 0.2);
-  padding: 0.2rem 0.4rem 0rem 0.4rem;
-  color: rgba(0,0,0,1);
-  box-shadow: 0rem 0rem 0.4rem 0.1rem rgba(0,0,0,0.1);
-  border-radius: 0.25rem;
-  transition: 0.4s;
+.product-add-to-favorite-active {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #000000 !important;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+  line-height: 1;
+  text-decoration: none !important;
+  display: inline-block;
 }
 
-.product-add-to-favorite-active,
-.product-add-to-favorite a:hover {
-  background-color: rgba(255,255,255, 1) !important;
-  color: #ff253a !important;
-  text-decoration: none;
-  transition: 0.4s;
+.product-add-to-favorite-active:hover {
+  color: #e25555 !important;
+  transform: scale(1.2) !important;
 }
 
-/* footer */
-.footer {
-  border-top: 1px solid #dedede;
+.product-add-to-favorite-active.favorited {
+  color: #e25555 !important;
 }
 
-.footer-shop-features {
-  padding-bottom: 3rem;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #dedede;
+.product-add-to-favorite-active .far.fa-heart {
+  color: #000000 !important;
 }
 
-.footer-shop-features-item {
-  text-align: center;
-}
-
-.footer-shop-features-item img {
-  height: 3.5rem;
-}
-
-.footer-shop-features-item section {
-  margin-top: 1.4rem;
-  font-size: 0.8rem;
-}
-
-.footer-intro {
-  line-height: 2rem;
-  font-size: 0.8rem;
+.product-add-to-favorite-active.favorited .fas.fa-heart {
+  color: #e25555 !important;
 }

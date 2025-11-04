@@ -16,7 +16,7 @@ function AddCategory() {
     queryKey: ["categories"],
     queryFn: async () => {
       const response = await getCategories();
-      return Array.isArray(response.data) ? response.data : [];
+      return response.data.data;
     },
     onError: () => {
       showError("دریافت دسته‌بندی‌ها با خطا مواجه شد");

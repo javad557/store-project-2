@@ -125,10 +125,11 @@ class AdminUserController extends Controller
 // app/Http/Controllers/YourController.php
 public function get_user()
 {
+    Log::info('test',['getusertest'=>'yes']);
     try {
         if (Auth::guard('api')->check()) {
             $user = Auth::guard('api')->user();
-            $userInformations = User::with(['permissions', 'roles.permissions'])->findOrFail($user->id);
+            $userInformations = User::with(['favorites','carts' , 'permissions', 'roles.permissions'])->findOrFail($user->id);
 
             // جمع‌آوری پرمیشن‌های مستقیم
             $directPermissions = $userInformations->permissions->pluck('name')->toArray();

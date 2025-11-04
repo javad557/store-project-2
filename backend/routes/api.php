@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\LoginRegisterManagmentController;
 use App\Http\Controllers\Admin\Market\BrandController;
@@ -28,15 +27,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Ticket\PriorityTicketController;
-
-
-
-
-
-
-
-
-
+use App\Http\Controllers\Main\Market\ProductController as MainProductController;
+use App\Http\Controllers\Main\Market\BrandController as MainBrandController;
+use App\Http\Controllers\Main\Market\CategoryController as MaincategoryController;
+use App\Http\Controllers\Main\Marketing\BannerController as MainBannerController;
+use App\Http\Controllers\Main\User\CustomerUserController as MainCustomerUserController;
+use App\Http\Controllers\Main\User\CustomerTicketController ;
 
 
 
@@ -243,12 +239,13 @@ Route::prefix('admin')->middleware(['auth:api','admin'])->group(function () {
 
      Route::prefix('tickets')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->middleware('permission:read_tickets');
-        Route::get('/allTickets', [TicketController::class, 'allTickets'])->middleware('permission:read_tickets');
+        Route::get('/get_related_tickets/{ticket}', [TicketController::class, 'allTickets'])->middleware('permission:read_tickets');
          Route::get('/newTickets', [TicketController::class, 'new_tickets'])->middleware('permission:read_tickets');
         Route::post('/change_status/{ticket}', [TicketController::class, 'change_status'])->middleware('permission:read_tickets');
         Route::get('/{ticket}', [TicketController::class, 'show'])->where('ticket', '[0-9]+')->middleware('permission:read_tickets');
         Route::post('/', [TicketController::class, 'store'])->middleware('permission:read_orders');
-        Route::post('/mark_tickets_as_seen', [TicketController::class, 'mark_tickets_as_seen'])->middleware('permission:read_orders');
+        Route::post('/mark_tickets_as_seen', [TicketController::class, 'mark_tickets_as_seen'])->middleware('permission:read_tickets');
+        Route::get('/get_related_tickets/{ticket}', [TicketController::class, 'get_related_tickets']);
 
         Route::get('/category_tickets', [CategoryTicketController::class, 'index'])->middleware('permission:read_tickets');
         Route::delete('/category_tickets/{category_ticket}', [CategoryTicketController::class, 'destroy'])->middleware('permission:edit_tickets');
@@ -290,4 +287,58 @@ Route::prefix('auth')->group(function () {
 
 Route::get('/recaptcha-config', function () {
     return response()->json(['site_key' => config('recaptcha.api_site_key')]);
+});
+
+
+Route::prefix('main')->group(function () {
+    Route::prefix('market')->group(function () {
+        Route::prefix('products')->group(function () {
+             Route::get('/', [MainProductController ::class, 'index']);
+             Route::post('/filtred_products', [MainProductController ::class, 'filtred_products']);
+             Route::get('/top_sellers', [MainProductController ::class, 'top_sellers']);
+             Route::get('/most_viewed', [MainProductController ::class, 'most_viewed']);
+             Route::post('/add_product_to_favorites/{product}', [MainProductController ::class, 'add_product_to_favorites']);
+        });
+
+        Route::prefix('banners')->group(function () {
+             Route::get('/', [MainBannerController ::class, 'index']);
+        });
+
+        Route::prefix('brands')->group(function () {
+             Route::get('/', [MainBrandController ::class, 'index']);
+        });
+
+        Route::prefix('categories')->group(function () {
+             Route::get('/', [MaincategoryController ::class, 'index']);
+        });
+    });
+    Route::prefix('customer_users')->middleware(['auth:api'])->group(function () {
+         Route::post('/update', [MainCustomerUserController ::class, 'update']);
+         Route::get('/orders', [MainCustomerUserController ::class, 'orders']);
+         Route::get('/my_order_items/{order}', [MainCustomerUserController ::class, 'my_order_items']);
+         Route::get('/my_favorites', [MainCustomerUserController ::class, 'my_favorites']);
+         Route::delete('/my_favorites/{product}', [MainCustomerUserController ::class, 'destroy_favorite']);
+        
+         Route::get('/my_addresses', [MainCustomerUserController ::class, 'my_addresses']);
+         Route::get('/my_address/{address}', [MainCustomerUserController ::class, 'my_address']);
+         Route::post('/add_address', [MainCustomerUserController ::class, 'add_address']);
+         Route::put('/edit_address/{address}', [MainCustomerUserController ::class, 'edit_address']);
+         Route::delete('/my_addresses/{address}', [MainCustomerUserController ::class, 'destroy_address']);
+         Route::get('/all_provinces', [MainCustomerUserController ::class, 'all_provinces']);
+         Route::get('/all_cities', [MainCustomerUserController ::class, 'all_cities']);
+
+         Route::prefix('tickets')->group(function () {
+             Route::get('/my_tickets', [CustomerTicketController ::class, 'my_tickets']);
+             Route::get('/allTickets', [CustomerTicketController::class, 'allTickets']);
+             Route::get('/get_related_tickets/{ticket}', [CustomerTicketController::class, 'get_related_tickets']);
+             Route::post('/change_status/{ticket}', [CustomerTicketController::class, 'change_status']);
+             Route::get('/{ticket}', [CustomerTicketController::class, 'show'])->where('ticket', '[0-9]+');
+             Route::post('/', [CustomerTicketController::class, 'store']);
+             Route::post('/create_ticket', [CustomerTicketController::class, 'create_ticket']);
+             Route::post('/mark_tickets_as_seen', [CustomerTicketController::class, 'mark_tickets_as_seen']);
+             Route::get('/', [CustomerTicketController ::class, 'my_tickets']);
+             Route::get('/category_tickets', [CustomerTicketController ::class, 'category_tickets']);
+             Route::get('/priority_tickets', [CustomerTicketController ::class, 'priority_tickets']);
+         });
+    });
 });

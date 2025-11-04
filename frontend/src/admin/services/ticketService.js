@@ -6,9 +6,10 @@ export const getTickets = async ()=>{
     return await axiosInstance.get('admin/tickets');
 }
 
-export const getAllTickets = async ()=>{
-    return await axiosInstance.get('admin/tickets/allTickets');
+export const getRelatedTickets = async (id)=>{
+    return await axiosInstance.get(`admin/tickets/get_related_tickets/${id}`);
 }
+
 
 export const getNewTickets = async ()=>{
     return await axiosInstance.get('admin/tickets/newTickets');

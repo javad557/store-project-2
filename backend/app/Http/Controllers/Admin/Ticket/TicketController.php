@@ -63,25 +63,59 @@ public function index()
         }
     }
 
-     public function allTickets()
-    {
-        try{
-            $tickets=Ticket::with(['user','categoryTicket','priorityTicket'])->get();
-            return response()->json([
-                'data'=>$tickets,
-                'message'=>'تیکت ها با موفقیت دریافت شد',
-            ],200);
+
+
+     public function get_related_tickets(Ticket $ticket)
+{
+    // Log::info('allticketstest',['allticketstest'=>'yes']);
+   try {
+        $user = Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'ابتدا وارد حساب کاربری شوید.'], 401);
         }
-        catch(\Throwable $e){
-            Log::error($e->getMessage());
-            return response()->json([
-                'error'=>'دریافت تیکتهای مورد نظر با خطا مواجه شد'
-            ],500);
-        }
+
+        $id=$ticket->id;
+        $mainTicket = Ticket::findOrFail($id);
+
+        // گرفتن همه id های مرتبط (خود تیکت + همه فرزندان در هر عمق)
+        $ids = $mainTicket->getAllDescendantIds(); // آرایه از idها
+
+        // واکشی همه تیکت‌ها با eager load روابط (این query یک Eloquent\Collection برمی‌گرداند)
+        $tickets = Ticket::with(['user', 'categoryTicket', 'priorityTicket'])
+            ->whereIn('id', $ids)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'data' => [
+                'tickets' => $tickets,
+                'current_user' => [
+                    'id' => $user->id,
+                    'full_name' => $user->full_name,
+                    'email' => $user->email,
+                ]
+            ],
+            'message' => 'تیکت‌ها با موفقیت دریافت شدند',
+        ], 200);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json(['error' => 'تیکت مورد نظر یافت نشد'], 404);
+    } catch (\Throwable $e) {
+        Log::error($e->getMessage());
+        return response()->json(['error' => 'خطا در دریافت تیکت‌ها'], 500);
     }
+}
 
     public function new_tickets()
 {
+     // احراز هویت کاربر از JWT
+            if (!Auth::guard('api')->check()) {
+                return response()->json([
+                    'error' => 'احراز هویت کاربر مورد نیاز است. لطفاً توکن معتبر ارسال کنید.',
+                ], 401);
+            }
+
+            $user = Auth::guard('api')->user();
     Log::info('check',['check'=>'yes']);
     try {
         $new_tickets = Ticket::with([
@@ -90,6 +124,7 @@ public function index()
             'priorityTicket',
         ])
             ->where('seen', 0)
+            ->where('user_id','!=',$user->id)
             ->get()
             ->map(function ($ticket) {
                 $rootTicket = $ticket->getRootTicket();
@@ -116,6 +151,7 @@ public function index()
      */
    public function store(Request $request)
     {
+        Log::info('tickettest',['tickettest'=>'yes']);
         try {
             // احراز هویت کاربر از JWT
             if (!Auth::guard('api')->check()) {
@@ -265,10 +301,17 @@ public function index()
         // دریافت آرایه ticketIds
         $ticketIds = $request->input('ticketIds');
 
+         if (!Auth::guard('api')->check()) {
+            return response()->json([
+                'error' => 'لطفاً ابتدا وارد حساب کاربری خود شوید',
+            ], 401);
+        }
+        $user = Auth::guard('api')->user();
+
         try {
             // به‌روزرسانی تیکت‌های unseen به seen
             Ticket::whereIn('id', $ticketIds)
-                ->where('seen', false) // فقط تیکت‌های unseen
+                ->where('seen', false)->where('user_id','!=',$user->id) // فقط تیکت‌های unseen
                 ->update(['seen' => true]);
 
         } catch (\Exception $e) {
@@ -278,19 +321,4 @@ public function index()
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
 }

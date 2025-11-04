@@ -9,6 +9,7 @@ use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Ticket extends Model
 {
@@ -61,18 +62,26 @@ class Ticket extends Model
 public function hasUnseenDescendants()
 {
     $hasUnseen = false;
-    
+    $currentUser = Auth::guard('api')->user(); // دریافت کاربر فعلی
+
+    if (!$currentUser) {
+        return false; // اگر کاربری لاگین نکرده، false برگردون
+    }
+
+    $currentUserId = $currentUser->id;
+
     // جمع‌آوری همه فرزندان به‌صورت بازگشتی
-    $checkChildren = function ($ticket) use (&$checkChildren, &$hasUnseen) {
+    $checkChildren = function ($ticket) use (&$checkChildren, &$hasUnseen, $currentUserId) {
         foreach ($ticket->children as $child) {
-            if ($child->seen == 0) {
+            // فقط تیکت‌هایی که seen = 0 و توسط کاربر فعلی نوشته نشده‌اند
+            if ($child->seen == 0 && $child->user_id != $currentUserId) {
                 $hasUnseen = true;
                 return;
             }
             $checkChildren($child); // بررسی فرزندانِ فرزند
         }
     };
-    
+
     $checkChildren($this);
     return $hasUnseen;
 }
@@ -91,6 +100,32 @@ public function hasUnseenDescendants()
         return $chekRoot($this);
     }
 
+
+    public function getAllDescendantIds(): array
+    {
+        $ids = [];
+        $stack = [$this->id];
+
+        while (!empty($stack)) {
+            $parentId = array_pop($stack);
+
+            // اضافه کردن parent به لیست (در نهایت خود تیکت اصلی هم خواهد بود)
+            if (!in_array($parentId, $ids)) {
+                $ids[] = $parentId;
+            }
+
+            // گرفتن فرزندان مستقیم آن parent
+            $children = self::where('parent_id', $parentId)->pluck('id')->toArray();
+
+            foreach ($children as $childId) {
+                if (!in_array($childId, $ids)) {
+                    $stack[] = $childId;
+                }
+            }
+        }
+
+        return $ids;
+    }
 
 
 

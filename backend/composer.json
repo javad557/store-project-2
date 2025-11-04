@@ -14,6 +14,7 @@
         "lcobucci/jwt": "^4.3",
         "melipayamak/laravel": "1.0.0",
         "pragmarx/google2fa-laravel": "^2.2",
+        "predis/predis": "^3.0",
         "tymon/jwt-auth": "^2.0"
     },
     "require-dev": {

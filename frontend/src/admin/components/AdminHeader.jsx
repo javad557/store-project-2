@@ -7,7 +7,7 @@ import { logout as logoutService } from "../../auth/services/authService";
 import { showSuccess, showError } from "../../utils/notifications";
 import logo from "/src/admin/assets/images/logo.png";
 import PropTypes from "prop-types";
-import { useAdminAuth } from "../../context/AdminAuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 function AdminHeader({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -15,7 +15,7 @@ function AdminHeader({ toggleSidebar }) {
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, loading } = useAdminAuth();
+  const { user, loading } = useAuth();
 
 
   // بررسی پرمیشن‌های واقعی کاربر

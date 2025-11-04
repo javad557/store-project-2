@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAdminAuth } from "../../context/AdminAuthContext"; // فرض می‌کنم مسیر درست context اینه
+import { useAuth } from "../../context/AuthContext"; // فرض می‌کنم مسیر درست context اینه
 
 function AdminSidebar() {
-  const { user, loading } = useAdminAuth(); // دریافت user و loading از context
+  const { user, loading } = useAuth(); // دریافت user و loading از context
   const [openSection, setOpenSection] = useState(null);
 
   // تابع برای تغییر وضعیت دراپ‌داون‌ها
@@ -20,6 +20,7 @@ function AdminSidebar() {
 
   // تعریف آیتم‌های سایدبار
   const sidebarItems = {
+    website: { path: "/main/home", permission: null, label: "وبسایت" }, // بدون نیاز به پرمیشن
     dashboard: { path: "/admin/dashboard", permission: null, label: "خانه" }, // بدون نیاز به پرمیشن
     market: {
       title: "مارکت",
@@ -95,9 +96,16 @@ function AdminSidebar() {
     <aside id="sidebar" className="sidebar">
       <section className="sidebar-container" style={{ height: "100vh", overflowY: "auto" }}>
         <section className="sidebar-wrapper">
+       
+          <Link to={sidebarItems.website.path} className="sidebar-link">
+             <i className="fa fa-globe"></i>
+            <span>{sidebarItems.website.label}</span>
+          </Link>
+
+
           {/* داشبورد (همیشه نمایش داده می‌شه) */}
           <Link to={sidebarItems.dashboard.path} className="sidebar-link">
-            <i className="fas fa-home"></i>
+          <i className="fas fa-home"></i>
             <span>{sidebarItems.dashboard.label}</span>
           </Link>
 
